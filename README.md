@@ -100,5 +100,8 @@ Hearthstone on Linux, [HearthSim](https://github.com/HearthSim) (`hslog` and Hea
 Tracker showed the way through the logs) and [HearthstoneJSON](https://hearthstonejson.com) for
 card data and art.
 
+Hearthwatch is released under the [MIT License](LICENSE). The artwork in `data/` and
+`hearthwatch/assets/` is part of the project and covered by it too.
+
 Hearthstone is a trademark of Blizzard Entertainment. Hearthwatch is a fan project and not
 affiliated with Blizzard.

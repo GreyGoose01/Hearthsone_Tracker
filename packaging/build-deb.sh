@@ -28,7 +28,8 @@ EOF
 sed "s|@HEARTHWATCH@|hearthwatch|" "data/$APP_ID.desktop" > "$SHARE/applications/$APP_ID.desktop"
 cp "data/$APP_ID.png" "$SHARE/icons/hicolor/256x256/apps/$APP_ID.png"
 cp "data/$APP_ID.metainfo.xml" "$SHARE/metainfo/$APP_ID.metainfo.xml"
-cp README.md README.de.md "$SHARE/doc/hearthwatch/"
+cp README.md README.de.md LICENSE "$SHARE/doc/hearthwatch/"
+cp LICENSE "$SHARE/doc/hearthwatch/copyright"
 
 cat > "$PKG/DEBIAN/control" <<EOF
 Package: hearthwatch
