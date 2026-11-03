@@ -36,7 +36,7 @@ Version: $VERSION
 Section: games
 Priority: optional
 Architecture: all
-Depends: python3 (>= 3.12), python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1
+Depends: python3 (>= 3.12), python3-gi, gir1.2-gtk-4.0 (>= 4.12), gir1.2-adw-1 (>= 1.4)
 Installed-Size: $(du -sk "$PKG/usr" | cut -f1)
 Maintainer: GreyGoose01 <GreyGoose01@users.noreply.github.com>
 Homepage: https://github.com/GreyGoose01/hearthwatch
