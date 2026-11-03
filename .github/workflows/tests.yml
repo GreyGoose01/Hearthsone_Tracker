@@ -1,17 +1,108 @@
+# Unit tests on several Python versions, the GUI on several distributions
+# (incl. the minimum versions), and the .deb on Ubuntu.
+# The ruleset requires the check "test": it is the summary job at the end.
 name: Tests
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
-  test:
+  unit:
+    name: unit (Python ${{ matrix.python }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
       - run: pip install pytest
       - run: python -m pytest -q
+
+  distro:
+    name: gui (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # minimum versions: Python 3.12, GTK 4.12, libadwaita 1.4
+          - { name: "fedora 39, minimum", image: "fedora:39", family: fedora }
+          - { name: "ubuntu 24.04", image: "ubuntu:24.04", family: debian }
+          - { name: "ubuntu 26.04", image: "ubuntu:26.04", family: debian }
+          - { name: "debian 13", image: "debian:trixie", family: debian }
+          - { name: "fedora latest", image: "fedora:latest", family: fedora }
+          - { name: "arch", image: "archlinux:latest", family: arch }
+    env:
+      HEARTHWATCH_REQUIRE_GUI: "1"
+      DISPLAY: ":99"
+      LANG: C.UTF-8
+    steps:
+      - name: Install GTK, libadwaita, PyGObject and Xvfb
+        run: |
+          case "${{ matrix.family }}" in
+            debian)
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+                python3 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 python3-pytest xvfb ;;
+            fedora)
+              dnf install -y python3 python3-gobject gtk4 libadwaita python3-pytest xorg-x11-server-Xvfb ;;
+            arch)
+              pacman -Syu --noconfirm python python-gobject gtk4 libadwaita python-pytest xorg-server-xvfb ;;
+          esac
+      - uses: actions/checkout@v4
+      - name: Versions
+        run: |
+          python3 --version
+          python3 -c "from hearthwatch.versions import runtime; print('python, gtk, libadwaita:', runtime())"
+      - name: Tests (with GUI under Xvfb)
+        run: |
+          Xvfb :99 -screen 0 1280x1024x24 &
+          sleep 2
+          python3 -m pytest -q
+
+  deb:
+    name: deb (${{ matrix.image }})
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["ubuntu:24.04", "ubuntu:26.04"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: packaging/build-deb.sh
+      - name: Install with apt (pulls in the dependencies)
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y ./dist/hearthwatch_*_all.deb
+      - name: Run
+        run: |
+          hearthwatch --version
+          hearthwatch --lang en --replay tests/fixtures/bg_game.log --offline
+          python3 -c "from hearthwatch.versions import runtime_problems as p; assert not p(), p()"
+          test -f /usr/share/icons/hicolor/256x256/apps/io.github.greygoose01.hearthwatch.png
+      - name: Remove
+        run: |
+          apt-get remove -y hearthwatch
+          test ! -e /usr/lib/python3/dist-packages/hearthwatch
+
+  test:
+    if: always()
+    needs: [unit, distro, deb]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: All jobs passed
+        run: |
+          echo '${{ toJSON(needs) }}'
+          test "${{ needs.unit.result }}" = success
+          test "${{ needs.distro.result }}" = success
+          test "${{ needs.deb.result }}" = success

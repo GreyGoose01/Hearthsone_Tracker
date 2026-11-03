@@ -235,6 +235,12 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_import(args.offline)
 
     try:
+        from hearthwatch.versions import runtime_problems
+
+        too_old = runtime_problems()
+        if too_old:
+            print("\n".join(too_old), file=sys.stderr)
+            return 1
         from hearthwatch.ui.app import run
     except (ImportError, ValueError) as exc:
         print(

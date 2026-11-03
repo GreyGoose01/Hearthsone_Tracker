@@ -22,7 +22,11 @@ noch in dessen Speicher ein.
 
 ## Installation
 
-Du brauchst Ubuntu 26.04 (24.04 geht auch) und Hearthstone, installiert über hearthstone-linux-gui.
+Du brauchst Hearthstone, installiert über hearthstone-linux-gui, außerdem Python 3.12, GTK 4.12 und
+libadwaita 1.4 oder neuer. Jede Änderung wird auf Ubuntu 24.04 und 26.04, Debian 13, Fedora und
+Arch Linux getestet.
+
+**Ubuntu, Debian, Linux Mint, Pop!_OS:**
 
 Lade `hearthwatch_<version>_all.deb` aus dem
 [neuesten Release](https://github.com/GreyGoose01/hearthwatch/releases/latest) und installiere es:
@@ -48,6 +52,14 @@ Das Skript installiert fehlende Pakete, Hearthwatch (über `pipx`) und einen Men
 danach das Logging ein. Deinstallieren mit `./install.sh --remove`. Wechselst du später zum .deb,
 führ das vorher aus.
 </details>
+
+**Fedora, Arch und andere:** PyGObject, GTK 4, libadwaita und pipx über den Paketmanager installieren
+(Fedora: `python3-gobject gtk4 libadwaita pipx`, Arch: `python-gobject gtk4 libadwaita
+python-pipx`), dann im geklonten Repo:
+
+```bash
+pipx install --system-site-packages . && hearthwatch --setup-logs
+```
 
 ## Einrichtung
 

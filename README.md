@@ -21,7 +21,11 @@ Hearthwatch only reads the log files Hearthstone writes. It does not touch the g
 
 ## Install
 
-You need Ubuntu 26.04 (24.04 works too) and Hearthstone installed with hearthstone-linux-gui.
+You need Hearthstone installed with hearthstone-linux-gui, plus Python 3.12, GTK 4.12 and
+libadwaita 1.4 or newer. Every change is tested on Ubuntu 24.04 and 26.04, Debian 13, Fedora and
+Arch Linux.
+
+**Ubuntu, Debian, Linux Mint, Pop!_OS:**
 
 Download `hearthwatch_<version>_all.deb` from the
 [latest release](https://github.com/GreyGoose01/hearthwatch/releases/latest) and install it:
@@ -46,6 +50,14 @@ git clone https://github.com/GreyGoose01/hearthwatch.git && cd hearthwatch
 The script installs the missing packages, Hearthwatch (via `pipx`) and a menu entry, then sets up
 the logging. Uninstall with `./install.sh --remove`. If you switch to the .deb later, run that first.
 </details>
+
+**Fedora, Arch and others:** install PyGObject, GTK 4, libadwaita and pipx with your package
+manager (Fedora: `python3-gobject gtk4 libadwaita pipx`, Arch: `python-gobject gtk4 libadwaita
+python-pipx`), then from the cloned repo:
+
+```bash
+pipx install --system-site-packages . && hearthwatch --setup-logs
+```
 
 ## Setup
 

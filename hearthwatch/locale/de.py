@@ -340,5 +340,8 @@ DE: dict[str, str] = {
     "Win {win:.0%} · Draw {draw:.0%} · Loss {loss:.0%}":
         "Sieg {win:.0%} · Unentschieden {draw:.0%} · Niederlage {loss:.0%}",
     "unknown": "unbekannt",
-#@@
+
+    # --- version check ---
+    "{name} {have} is too old, Hearthwatch needs {need} or newer.":
+        "{name} {have} ist zu alt, Hearthwatch braucht {need} oder neuer.",
 }
