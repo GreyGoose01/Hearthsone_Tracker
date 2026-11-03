@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.greygoose01.hearthwatch</id>
+  <name>Hearthwatch</name>
+  <summary>Battlegrounds tracker for Hearthstone on Linux</summary>
+  <summary xml:lang="de">Schlachtfeld-Tracker für Hearthstone unter Linux</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <developer id="io.github.greygoose01">
+    <name>GreyGoose01</name>
+  </developer>
+  <description>
+    <p>
+      A live tracker for Hearthstone Battlegrounds, made for hearthstone-linux-gui. It shows your
+      next opponent, combat odds from a built-in simulator, your buffs, the lobby and a match history.
+    </p>
+    <p xml:lang="de">
+      Ein Live-Tracker für den Hearthstone-Modus Schlachtfeld, gemacht für hearthstone-linux-gui. Er
+      zeigt deinen nächsten Gegner, die Gewinnchance aus einem eingebauten Simulator, deine Buffs,
+      die Lobby und eine Historie.
+    </p>
+    <p>It only reads the log files Hearthstone writes. Not affiliated with Blizzard Entertainment.</p>
+  </description>
+  <launchable type="desktop-id">io.github.greygoose01.hearthwatch.desktop</launchable>
+  <url type="homepage">https://github.com/GreyGoose01/hearthwatch</url>
+  <url type="bugtracker">https://github.com/GreyGoose01/hearthwatch/issues</url>
+  <categories>
+    <category>Game</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.2.1" date="2026-11-03"/>
+  </releases>
+</component>

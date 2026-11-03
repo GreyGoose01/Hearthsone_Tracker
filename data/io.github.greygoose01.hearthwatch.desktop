@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Hearthwatch
+Comment=Battlegrounds tracker for Hearthstone on Linux
+Comment[de]=Schlachtfeld-Tracker für Hearthstone unter Linux
+Exec=@HEARTHWATCH@
+Icon=io.github.greygoose01.hearthwatch
+Terminal=false
+Categories=Game;Utility;
+Keywords=Hearthstone;Battlegrounds;Schlachtfeld;Tracker;
+StartupNotify=true

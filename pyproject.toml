@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hearthwatch"
+version = "0.2.1"
+description = "Hearthwatch: Battlegrounds tracker for Hearthstone on Linux (hearthstone-linux-gui, GTK4/libadwaita)"
+readme = "README.md"
+requires-python = ">=3.12"
+# PyGObject, GTK 4 and libadwaita come from the distribution (apt), see README.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+hearthwatch = "hearthwatch.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["hearthwatch*"]
+
+[tool.setuptools.package-data]
+hearthwatch = ["assets/*.png"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

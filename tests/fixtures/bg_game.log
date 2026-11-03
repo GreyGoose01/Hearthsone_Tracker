@@ -1,0 +1,231 @@
+D 20:00:00.0100000 GameState.DebugPrintPower() - CREATE_GAME
+D 20:00:00.0200000 GameState.DebugPrintPower() -     GameEntity EntityID=1
+D 20:00:00.0300000 GameState.DebugPrintPower() -         tag=TURN value=0
+D 20:00:00.0400000 GameState.DebugPrintPower() -     Player EntityID=2 PlayerID=5 GameAccountId=[hi=144115198130930503 lo=12345678]
+D 20:00:00.0500000 GameState.DebugPrintPower() -     Player EntityID=3 PlayerID=13 GameAccountId=[hi=0 lo=0]
+D 20:00:00.0600000 GameState.DebugPrintGame() - GameType=GT_BATTLEGROUNDS
+D 20:00:00.0700000 GameState.DebugPrintGame() - FormatType=FT_WILD
+D 20:00:00.0800000 GameState.DebugPrintGame() - ScenarioID=3459
+D 20:00:00.0900000 GameState.DebugPrintGame() - PlayerID=5, PlayerName=Tester#2345
+D 20:00:00.1000000 GameState.DebugPrintGame() - PlayerID=13, PlayerName=Bartender Bob
+D 20:00:00.1100000 GameState.DebugPrintPower() - TAG_CHANGE Entity=GameEntity tag=TURN value=99
+D 20:00:00.1200000 GameState.DebugPrintPower() - TAG_CHANGE Entity=Tester#2345 tag=NEXT_OPPONENT_PLAYER_ID value=7
+D 20:00:00.1300000 PowerTaskList.DebugPrintPower() - CREATE_GAME
+D 20:00:00.1400000 PowerTaskList.DebugPrintPower() -     GameEntity EntityID=1
+D 20:00:00.1500000 PowerTaskList.DebugPrintPower() -         tag=TURN value=0
+D 20:00:00.1600000 PowerTaskList.DebugPrintPower() -         tag=STATE value=RUNNING
+D 20:00:00.1700000 PowerTaskList.DebugPrintPower() -     Player EntityID=2 PlayerID=5 GameAccountId=[hi=144115198130930503 lo=12345678]
+D 20:00:00.1800000 PowerTaskList.DebugPrintPower() -         tag=CONTROLLER value=5
+D 20:00:00.1900000 PowerTaskList.DebugPrintPower() -         tag=CARDTYPE value=PLAYER
+D 20:00:00.2000000 PowerTaskList.DebugPrintPower() -         tag=PLAYER_TECH_LEVEL value=1
+D 20:00:00.2100000 PowerTaskList.DebugPrintPower() -     Player EntityID=3 PlayerID=13 GameAccountId=[hi=0 lo=0]
+D 20:00:00.2200000 PowerTaskList.DebugPrintPower() -         tag=CONTROLLER value=13
+D 20:00:00.2300000 PowerTaskList.DebugPrintPower() -         tag=CARDTYPE value=PLAYER
+D 20:00:00.2400000 PowerTaskList.DebugPrintPower() -         tag=BACON_DUMMY_PLAYER value=1
+D 20:00:00.2500000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=TB_BaconShopBob id=9 zone=PLAY zonePos=0 cardId=TB_BaconShopBob player=13] CardID=TB_BaconShopBob
+D 20:00:00.2600000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:00.2700000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:00.2800000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:00.2900000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=40
+D 20:00:00.3000000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:00.3100000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=Bartender Bob tag=HERO_ENTITY value=9
+D 20:00:00.3200000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_D id=8 zone=SETASIDE zonePos=0 cardId=BG_HERO_D player=13] CardID=BG_HERO_D
+D 20:00:00.3300000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:00.3400000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:00.3500000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=SETASIDE
+D 20:00:00.3600000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:00.3700000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=4
+D 20:00:00.3800000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=4
+D 20:00:00.3900000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:00.4000000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_A id=10 zone=PLAY zonePos=0 cardId=BG_HERO_A player=5] CardID=BG_HERO_A
+D 20:00:00.4100000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=5
+D 20:00:00.4200000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:00.4300000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:00.4400000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:00.4500000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=1
+D 20:00:00.4600000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=1
+D 20:00:00.4700000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:00.4800000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_B id=11 zone=SETASIDE zonePos=0 cardId=BG_HERO_B player=13] CardID=BG_HERO_B
+D 20:00:00.4900000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:00.5000000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:00.5100000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=SETASIDE
+D 20:00:00.5200000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:00.5300000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=2
+D 20:00:00.5400000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=2
+D 20:00:00.5500000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:00.5600000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_C id=12 zone=SETASIDE zonePos=0 cardId=BG_HERO_C player=13] CardID=BG_HERO_C
+D 20:00:00.5700000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:00.5800000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:00.5900000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=SETASIDE
+D 20:00:01.0000000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:01.0100000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=3
+D 20:00:01.0200000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=3
+D 20:00:01.0300000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:01.0400000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_D id=13 zone=SETASIDE zonePos=0 cardId=BG_HERO_D player=13] CardID=BG_HERO_D
+D 20:00:01.0500000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:01.0600000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:01.0700000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=SETASIDE
+D 20:00:01.0800000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:01.0900000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=4
+D 20:00:01.1000000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=4
+D 20:00:01.1100000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:01.1200000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_E id=14 zone=SETASIDE zonePos=0 cardId=BG_HERO_E player=13] CardID=BG_HERO_E
+D 20:00:01.1300000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:01.1400000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:01.1500000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=SETASIDE
+D 20:00:01.1600000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:01.1700000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=5
+D 20:00:01.1800000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=5
+D 20:00:01.1900000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:01.2000000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_F id=15 zone=SETASIDE zonePos=0 cardId=BG_HERO_F player=13] CardID=BG_HERO_F
+D 20:00:01.2100000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:01.2200000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:01.2300000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=SETASIDE
+D 20:00:01.2400000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:01.2500000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=6
+D 20:00:01.2600000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=6
+D 20:00:01.2700000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:01.2800000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_G id=16 zone=SETASIDE zonePos=0 cardId=BG_HERO_G player=13] CardID=BG_HERO_G
+D 20:00:01.2900000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:01.3000000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:01.3100000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=SETASIDE
+D 20:00:01.3200000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:01.3300000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=7
+D 20:00:01.3400000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=7
+D 20:00:01.3500000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:01.3600000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_H id=17 zone=SETASIDE zonePos=0 cardId=BG_HERO_H player=13] CardID=BG_HERO_H
+D 20:00:01.3700000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:01.3800000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:01.3900000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=SETASIDE
+D 20:00:01.4000000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:01.4100000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=8
+D 20:00:01.4200000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=8
+D 20:00:01.4300000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=1
+D 20:00:01.4400000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=Tester#2345 tag=HERO_ENTITY value=10
+D 20:00:01.4500000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=Tester#2345 tag=NEXT_OPPONENT_PLAYER_ID value=3
+D 20:00:01.4600000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=GameEntity tag=TURN value=1
+D 20:00:01.4700000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_SHOP_MURLOC id=30 zone=PLAY zonePos=1 cardId=BG_SHOP_MURLOC player=13] CardID=BG_SHOP_MURLOC
+D 20:00:01.4800000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:01.4900000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=MINION
+D 20:00:01.5000000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:01.5100000 PowerTaskList.DebugPrintPower() -     tag=ATK value=2
+D 20:00:01.5200000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=1
+D 20:00:01.5300000 PowerTaskList.DebugPrintPower() -     tag=ZONE_POSITION value=1
+D 20:00:01.5400000 PowerTaskList.DebugPrintPower() -     tag=CARDRACE value=MURLOC
+D 20:00:01.5500000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=2 cardId=BG_SHOP_BEAST player=13] CardID=BG_SHOP_BEAST
+D 20:00:01.5600000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:01.5700000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=MINION
+D 20:00:01.5800000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:01.5900000 PowerTaskList.DebugPrintPower() -     tag=ATK value=1
+D 20:00:02.0000000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=1
+D 20:00:02.0100000 PowerTaskList.DebugPrintPower() -     tag=ZONE_POSITION value=2
+D 20:00:02.0200000 PowerTaskList.DebugPrintPower() -     tag=CARDRACE value=BEAST
+D 20:00:02.0300000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_SHOP_MECH id=32 zone=PLAY zonePos=3 cardId=BG_SHOP_MECH player=13] CardID=BG_SHOP_MECH
+D 20:00:02.0400000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:02.0500000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=MINION
+D 20:00:02.0600000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:02.0700000 PowerTaskList.DebugPrintPower() -     tag=ATK value=1
+D 20:00:02.0800000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=2
+D 20:00:02.0900000 PowerTaskList.DebugPrintPower() -     tag=ZONE_POSITION value=3
+D 20:00:02.1000000 PowerTaskList.DebugPrintPower() -     tag=CARDRACE value=MECHANICAL
+D 20:00:02.1100000 PowerTaskList.DebugPrintPower() - BLOCK_START BlockType=PLAY Entity=[entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=2 cardId=BG_SHOP_BEAST player=13] EffectCardId=System.Collections.Generic.List`1[System.String] EffectIndex=0 Target=0 SubOption=-1 
+D 20:00:02.1200000 PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=[entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=0 cardId=BG_SHOP_BEAST player=13] tag=CONTROLLER value=5
+D 20:00:02.1300000 PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=[entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=0 cardId=BG_SHOP_BEAST player=5] tag=ZONE_POSITION value=1
+D 20:00:02.1400000 PowerTaskList.DebugPrintPower() - BLOCK_END
+D 20:00:02.1500000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_SHOP_DEMON id=33 zone=PLAY zonePos=1 cardId=BG_SHOP_DEMON player=13] CardID=BG_SHOP_DEMON
+D 20:00:02.1600000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:02.1700000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=MINION
+D 20:00:02.1800000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:02.1900000 PowerTaskList.DebugPrintPower() -     tag=ATK value=1
+D 20:00:02.2000000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=3
+D 20:00:02.2100000 PowerTaskList.DebugPrintPower() -     tag=ZONE_POSITION value=1
+D 20:00:02.2200000 PowerTaskList.DebugPrintPower() -     tag=CARDRACE value=DEMON
+D 20:00:02.2300000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_SHOP_PIRATE id=34 zone=PLAY zonePos=2 cardId=BG_SHOP_PIRATE player=13] CardID=BG_SHOP_PIRATE
+D 20:00:02.2400000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:02.2500000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=MINION
+D 20:00:02.2600000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:02.2700000 PowerTaskList.DebugPrintPower() -     tag=ATK value=3
+D 20:00:02.2800000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=1
+D 20:00:02.2900000 PowerTaskList.DebugPrintPower() -     tag=ZONE_POSITION value=2
+D 20:00:02.3000000 PowerTaskList.DebugPrintPower() -     tag=CARDRACE value=PIRATE
+D 20:00:02.3100000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=GameEntity tag=3533 value=1
+D 20:00:02.3200000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_SHOP_MECH id=32 zone=PLAY zonePos=0 cardId=BG_SHOP_MECH player=13] tag=ZONE value=SETASIDE
+D 20:00:02.3300000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_SHOP_DEMON id=33 zone=PLAY zonePos=0 cardId=BG_SHOP_DEMON player=13] tag=ZONE value=SETASIDE
+D 20:00:02.3400000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_SHOP_PIRATE id=34 zone=PLAY zonePos=0 cardId=BG_SHOP_PIRATE player=13] tag=ZONE value=SETASIDE
+D 20:00:02.3500000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_HERO_C id=50 zone=PLAY zonePos=0 cardId=BG_HERO_C player=13] CardID=BG_HERO_C
+D 20:00:02.3600000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:02.3700000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=HERO
+D 20:00:02.3800000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:02.3900000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=30
+D 20:00:02.4000000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_ID value=3
+D 20:00:02.4100000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_LEADERBOARD_PLACE value=3
+D 20:00:02.4200000 PowerTaskList.DebugPrintPower() -     tag=PLAYER_TECH_LEVEL value=2
+D 20:00:02.4300000 PowerTaskList.DebugPrintPower() -     tag=ARMOR value=18
+D 20:00:02.4400000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_OPP_1 id=51 zone=PLAY zonePos=1 cardId=BG_OPP_1 player=13] CardID=BG_OPP_1
+D 20:00:02.4500000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:02.4600000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=MINION
+D 20:00:02.4700000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:02.4800000 PowerTaskList.DebugPrintPower() -     tag=ATK value=1
+D 20:00:02.4900000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=2
+D 20:00:02.5000000 PowerTaskList.DebugPrintPower() -     tag=ZONE_POSITION value=1
+D 20:00:02.5100000 PowerTaskList.DebugPrintPower() -     tag=CARDRACE value=MURLOC
+D 20:00:02.5200000 PowerTaskList.DebugPrintPower() -     tag=TAUNT value=1
+D 20:00:02.5300000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_OPP_2 id=52 zone=PLAY zonePos=2 cardId=BG_OPP_2 player=13] CardID=BG_OPP_2
+D 20:00:02.5400000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:02.5500000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=MINION
+D 20:00:02.5600000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:02.5700000 PowerTaskList.DebugPrintPower() -     tag=ATK value=3
+D 20:00:02.5800000 PowerTaskList.DebugPrintPower() -     tag=HEALTH value=3
+D 20:00:02.5900000 PowerTaskList.DebugPrintPower() -     tag=ZONE_POSITION value=2
+D 20:00:03.0000000 PowerTaskList.DebugPrintPower() -     tag=CARDRACE value=DEMON
+D 20:00:03.0100000 PowerTaskList.DebugPrintPower() -     tag=DIVINE_SHIELD value=1
+D 20:00:03.0200000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_ENCH_BUFF id=53 zone=PLAY zonePos=0 cardId=BG_ENCH_BUFF player=13] CardID=BG_ENCH_BUFF
+D 20:00:03.0300000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=13
+D 20:00:03.0400000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=ENCHANTMENT
+D 20:00:03.0500000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:03.0600000 PowerTaskList.DebugPrintPower() -     tag=ATTACHED value=52
+D 20:00:03.0700000 PowerTaskList.DebugPrintPower() -     tag=TAG_SCRIPT_DATA_NUM_1 value=1
+D 20:00:03.0800000 PowerTaskList.DebugPrintPower() -     tag=TAG_SCRIPT_DATA_NUM_2 value=1
+D 20:00:03.0900000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=GameEntity tag=3533 value=0
+D 20:00:03.1000000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=GameEntity tag=TURN value=2
+D 20:00:03.1100000 PowerTaskList.DebugPrintPower() - BLOCK_START BlockType=ATTACK Entity=[entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=1 cardId=BG_SHOP_BEAST player=5] EffectCardId=System.Collections.Generic.List`1[System.String] EffectIndex=0 Target=[entityName=BG_OPP_1 id=51 zone=PLAY zonePos=1 cardId=BG_OPP_1 player=13] SubOption=-1 
+D 20:00:03.1200000 PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=[entityName=BG_OPP_1 id=51 zone=PLAY zonePos=0 cardId=BG_OPP_1 player=13] tag=DAMAGE value=1
+D 20:00:03.1300000 PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=[entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=0 cardId=BG_SHOP_BEAST player=5] tag=DAMAGE value=1
+D 20:00:03.1400000 PowerTaskList.DebugPrintPower() - BLOCK_END
+D 20:00:03.1500000 PowerTaskList.DebugPrintPower() - BLOCK_START BlockType=DEATHS Entity=GameEntity EffectCardId=System.Collections.Generic.List`1[System.String] EffectIndex=0 Target=0 SubOption=-1 
+D 20:00:03.1600000 PowerTaskList.DebugPrintPower() -     TAG_CHANGE Entity=[entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=0 cardId=BG_SHOP_BEAST player=5] tag=ZONE value=GRAVEYARD
+D 20:00:03.1700000 PowerTaskList.DebugPrintPower() - BLOCK_END
+D 20:00:03.1800000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_HERO_A id=10 zone=PLAY zonePos=0 cardId=BG_HERO_A player=5] tag=DAMAGE value=4
+D 20:00:03.1900000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_HERO_D id=13 zone=SETASIDE zonePos=0 cardId=BG_HERO_D player=13] tag=DAMAGE value=7
+D 20:00:03.2000000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_HERO_D id=13 zone=SETASIDE zonePos=0 cardId=BG_HERO_D player=13] tag=PLAYER_LEADERBOARD_PLACE value=6
+D 20:00:03.2100000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_HERO_F id=15 zone=SETASIDE zonePos=0 cardId=BG_HERO_F player=13] tag=PLAYER_LEADERBOARD_PLACE value=4
+D 20:00:03.2200000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_OPP_1 id=51 zone=PLAY zonePos=0 cardId=BG_OPP_1 player=13] tag=ZONE value=SETASIDE
+D 20:00:03.2300000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_OPP_2 id=52 zone=PLAY zonePos=0 cardId=BG_OPP_2 player=13] tag=ZONE value=SETASIDE
+D 20:00:03.2400000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_HERO_C id=50 zone=PLAY zonePos=0 cardId=BG_HERO_C player=13] tag=ARMOR value=0
+D 20:00:03.2500000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_HERO_C id=50 zone=PLAY zonePos=0 cardId=BG_HERO_C player=13] tag=ZONE value=SETASIDE
+D 20:00:03.2600000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_SHOP_BEAST id=31 zone=GRAVEYARD zonePos=0 cardId=BG_SHOP_BEAST player=5] tag=ZONE value=PLAY
+D 20:00:03.2700000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=0 cardId=BG_SHOP_BEAST player=5] tag=DAMAGE value=0
+D 20:00:03.2800000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=GameEntity tag=TURN value=3
+D 20:00:03.2900000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=Tester#2345 tag=PLAYER_TECH_LEVEL value=2
+D 20:00:03.3000000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_HERO_A id=10 zone=PLAY zonePos=0 cardId=BG_HERO_A player=5] tag=PLAYER_TECH_LEVEL value=2
+D 20:00:03.3100000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=Tester#2345 tag=NEXT_OPPONENT_PLAYER_ID value=5
+D 20:00:03.3200000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_HERO_E id=14 zone=SETASIDE zonePos=0 cardId=BG_HERO_E player=13] tag=PLAYER_TECH_LEVEL value=2
+D 20:00:03.3300000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_PLAYER_BUFF id=70 zone=PLAY zonePos=0 cardId=BG_PLAYER_BUFF player=5] CardID=BG_PLAYER_BUFF
+D 20:00:03.3400000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=5
+D 20:00:03.3500000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=ENCHANTMENT
+D 20:00:03.3600000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:03.3700000 PowerTaskList.DebugPrintPower() -     tag=ATTACHED value=2
+D 20:00:03.3800000 PowerTaskList.DebugPrintPower() -     tag=TAG_SCRIPT_DATA_NUM_1 value=2
+D 20:00:03.3900000 PowerTaskList.DebugPrintPower() -     tag=TAG_SCRIPT_DATA_NUM_2 value=1
+D 20:00:03.4000000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=Tester#2345 tag=BACON_PLAYER_EXTRA_GOLD_NEXT_TURN value=2
+D 20:00:03.4100000 PowerTaskList.DebugPrintPower() - FULL_ENTITY - Updating [entityName=BG_ENCH_BUFF id=71 zone=PLAY zonePos=0 cardId=BG_ENCH_BUFF player=5] CardID=BG_ENCH_BUFF
+D 20:00:03.4200000 PowerTaskList.DebugPrintPower() -     tag=CONTROLLER value=5
+D 20:00:03.4300000 PowerTaskList.DebugPrintPower() -     tag=CARDTYPE value=ENCHANTMENT
+D 20:00:03.4400000 PowerTaskList.DebugPrintPower() -     tag=ZONE value=PLAY
+D 20:00:03.4500000 PowerTaskList.DebugPrintPower() -     tag=ATTACHED value=31
+D 20:00:03.4600000 PowerTaskList.DebugPrintPower() -     tag=TAG_SCRIPT_DATA_NUM_1 value=2
+D 20:00:03.4700000 PowerTaskList.DebugPrintPower() -     tag=TAG_SCRIPT_DATA_NUM_2 value=2
+D 20:00:03.4800000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=0 cardId=BG_SHOP_BEAST player=5] tag=ATK value=3
+D 20:00:03.4900000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_SHOP_BEAST id=31 zone=PLAY zonePos=0 cardId=BG_SHOP_BEAST player=5] tag=HEALTH value=3
+D 20:00:03.5000000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=[entityName=BG_HERO_A id=10 zone=PLAY zonePos=0 cardId=BG_HERO_A player=5] tag=PLAYER_LEADERBOARD_PLACE value=3
+D 20:00:03.5100000 PowerTaskList.DebugPrintPower() - TAG_CHANGE Entity=GameEntity tag=STATE value=COMPLETE
