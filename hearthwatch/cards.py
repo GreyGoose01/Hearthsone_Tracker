@@ -255,7 +255,7 @@ class CardDB:
     @staticmethod
     def download(target: Path, locale: str = "deDE", timeout: float = 60.0) -> None:
         url = CARDS_URL.format(locale=locale)
-        req = urllib.request.Request(url, headers={"User-Agent": "hearthwatch/0.3"})
+        req = urllib.request.Request(url, headers={"User-Agent": "hearthwatch/0.4"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             cards = json.load(resp)
         reduced = [{k: c[k] for k in _KEEP if k in c} for c in cards]
