@@ -260,11 +260,7 @@ class MinionChip(Gtk.Box):
             buff = Gtk.Label(label=f"✦ {count}" if compact else "✦ " + text.format(count=count))
             buff.add_css_class("minion-buff")
             self.append(buff)
-        self.set_tooltip_text(
-            f"{m.name or m.card_id}  {m.attack}/{m.health}"
-            + (f"\n{', '.join(_(k) for k in m.keywords())}" if m.keywords() else "")
-            + ("\nBuffs:\n• " + "\n• ".join(buffs) if buffs else "")
-        )
+        self.set_tooltip_text(m.tooltip())
 
 
 def board_flow(minions: list[Minion], empty_text: str = "",

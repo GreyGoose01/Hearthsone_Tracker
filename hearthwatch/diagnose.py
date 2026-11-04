@@ -70,6 +70,7 @@ def run_checks() -> list[Check]:
             "game", title, ERROR, _("Not found, looked in {path} and others").format(path=short(game_dir)),
             _("Install Hearthstone in the launcher (hearthstone-linux-gui) with “Install / Update”. "
               "If it lives somewhere else, set HEARTHWATCH_GAME_DIR=/path/to/game."),
+            banner=_("Hearthstone was not found. Install it with hearthstone-linux-gui."),
         ))
 
     # 2. game started at least once (it then writes options.txt)
@@ -234,6 +235,25 @@ def inspect_power_log(path: Path, max_bytes: int = 4 * 1024 * 1024) -> PowerLogI
         elif rest.startswith("tag="):
             initial_tags += 1
     return PowerLogInfo(size, power_lines, full_entities, initial_tags)
+
+
+def banner_problem(checks: list[Check], in_game: bool, dismissed: set[str]) -> Check | None:
+    """The problem worth a banner in the main window, if any.
+
+    Only errors (warnings stay in "Check setup"), nothing while a game is being
+    followed (then the logs evidently work), and not a problem the user has
+    already opened via the banner - until it changes.
+    """
+    if in_game:
+        return None
+    for c in checks:
+        if c.status == ERROR and banner_key(c) not in dismissed:
+            return c
+    return None
+
+
+def banner_key(check: Check) -> str:
+    return f"{check.key}:{check.status}:{check.detail}"
 
 
 def first_problem(checks: list[Check]) -> Check | None:

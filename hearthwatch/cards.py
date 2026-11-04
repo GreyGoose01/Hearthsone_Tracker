@@ -55,15 +55,23 @@ def tribe_name(tribe: str) -> str:
 _TAG_RE = re.compile(r"</?[a-zA-Z][^>]*>")
 
 
-def card_text(text: str) -> str:
-    """Card text as plain text: no markup, no layout markers, one line."""
+def card_text(text: str, values: tuple[int, ...] | list[int] = ()) -> str:
+    """Card text as plain text: no markup, no layout markers, one line.
+
+    ``values`` fill the game's ``{0}``, ``{1}`` ... (TAG_SCRIPT_DATA_NUM_1, _2 ...);
+    without them the numbers show as "X".
+    """
     if not text:
         return ""
     text = text.split("@", 1)[0]  # "@" starts an alternative text the game swaps in
     text = _TAG_RE.sub("", text).replace("[x]", "")
     text = re.sub(r"\[[a-z]\]", "", text)  # grammar markers, e.g. "Gasthaus[d]zauber"
     text = re.sub(r"\|4\(([^,()]*),\s*([^()]*)\)", r"\2", text)  # "|4(Zug, Züge)" -> plural
-    text = re.sub(r"\{\d+\}", "X", text)  # values the game fills in during a match
+    def value(m: re.Match) -> str:
+        i = int(m.group(1))
+        return str(values[i]) if i < len(values) else "X"
+
+    text = re.sub(r"\{(\d+)\}", value, text)  # values the game fills in during a match
     text = re.sub(r"[$#](\d)", r"\1", text)  # $3 / #3: spell damage / healing markers
     text = text.replace("_", " ").replace("\n", " ")
     text = re.sub(r"\s+", " ", text).strip()

@@ -15,7 +15,7 @@ from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 from hearthwatch import __version__, clientconfig, i18n, logconfig, paths  # noqa: E402
 from hearthwatch.cards import CardDB  # noqa: E402
 from hearthwatch.db import MatchDB  # noqa: E402
-from hearthwatch.diagnose import Check, first_problem, run_checks  # noqa: E402
+from hearthwatch.diagnose import Check, banner_key, banner_problem, run_checks  # noqa: E402
 from hearthwatch.i18n import _  # noqa: E402
 from hearthwatch.service import Callbacks, TrackerService  # noqa: E402
 from hearthwatch.ui.diagnose_window import DiagnoseWindow  # noqa: E402
@@ -68,9 +68,9 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.banner = Adw.Banner(button_label=_("Details"))
         self._banner_action = "diagnose"
-        self.banner.connect(
-            "button-clicked", lambda *_: app.activate_action(self._banner_action)
-        )
+        self._banner_key = ""
+        self._dismissed: set[str] = set()  # problems already opened from the banner
+        self.banner.connect("button-clicked", self._on_banner_button)
 
         self.toasts = Adw.ToastOverlay()
         self.toasts.set_child(self.live)
@@ -94,6 +94,12 @@ class MainWindow(Adw.ApplicationWindow):
         self._log_stalled = stalled
         self.update_banner()
 
+    def _on_banner_button(self, *_args) -> None:
+        if self._banner_key:
+            self._dismissed.add(self._banner_key)  # seen - do not keep showing it
+        self.get_application().activate_action(self._banner_action)
+        self.update_banner()
+
     def update_banner(self) -> list[Check]:
         checks = run_checks()
         if getattr(self, "_log_stalled", False):
@@ -105,10 +111,12 @@ class MainWindow(Adw.ApplicationWindow):
             self.banner.set_button_label(_("Set up"))
             self.banner.set_revealed(True)
             return checks
-        problem = first_problem(checks)
+        self._banner_key = ""
+        problem = banner_problem(checks, self.live.in_game, self._dismissed)
         if problem is None:
             self.banner.set_revealed(False)
             return checks
+        self._banner_key = banner_key(problem)
         self.banner.set_title(problem.banner or f"{problem.title}: {problem.hint or problem.detail}")
         if problem.action == "setup-logs":
             self._banner_action = "setup-logs"

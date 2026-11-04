@@ -364,4 +364,9 @@ DE: dict[str, str] = {
     "Trinkets: {names}": "Schmuckstücke: {names}",
     "Anomaly: {name}": "Anomalie: {name}",
     "(last in round {round})": "(zuletzt Runde {round})",
+    "Buffs:": "Buffs:",
+    "In this lobby": "In dieser Lobby",
+    "Not in this lobby: {types}": "Nicht in dieser Lobby: {types}",
+    "Hearthstone was not found. Install it with hearthstone-linux-gui.":
+        "Hearthstone wurde nicht gefunden. Installiere es mit hearthstone-linux-gui.",
 }

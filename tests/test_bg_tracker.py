@@ -280,6 +280,23 @@ def test_live_board_buffs_and_counters(bg_log, cards):
     assert s.counters == ["Gold nächste Runde +2"]
 
 
+def test_hover_texts_show_card_and_buff_effects(bg_log, cards):
+    _, _, states, _, _ = run(bg_log, cards)
+    s = [s for s in states if s.in_game and s.round == 2 and s.phase == "recruit"][-1]
+    m = s.my_board[0]
+    assert m.text == "Spott"
+    assert m.buff_texts == ["+2/+2."]  # {0}/{1} filled from the enchantment
+    assert m.tooltip().splitlines() == ["Wildschwein  3/3", "Spott", "Buffs:", "• Teufelsstärke (2/2): +2/+2."]
+    assert s.player_buff_texts == ["Eure Blutedelsteine geben zusätzlich +2/+1."]
+
+
+def test_old_saved_minions_without_texts_still_load():
+    from hearthwatch.bg.models import Minion
+
+    m = Minion.from_dict({"card_id": "X", "attack": 1, "health": 2, "name": "Alt", "buffs": ["B ×2"]})
+    assert m.tooltip() == "Alt  1/2\nBuffs:\n• B ×2"
+
+
 def test_lobby_details(bg_log, cards):
     _, _, states, _, _ = run(bg_log, cards)
     s = [s for s in states if s.in_game and s.round == 2][-1]
