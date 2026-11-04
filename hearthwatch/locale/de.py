@@ -357,4 +357,11 @@ DE: dict[str, str] = {
     "Not all minion types are known yet – faded types may not be in this game.":
         "Noch nicht alle Dienertypen bekannt – blasse Typen sind vielleicht nicht im Spiel.",
     "Neutral": "Neutral",
+
+    # --- anomaly, triples, trinkets ---
+    "{n} triple": "{n} Drilling",
+    "{n} triples": "{n} Drillinge",
+    "Trinkets: {names}": "Schmuckstücke: {names}",
+    "Anomaly: {name}": "Anomalie: {name}",
+    "(last in round {round})": "(zuletzt Runde {round})",
 }

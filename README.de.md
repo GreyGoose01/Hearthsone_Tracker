@@ -15,7 +15,8 @@ Ein Live-Tracker für den Hearthstone-Modus Schlachtfeld unter Linux. Gemacht f�
   danach das echte Ergebnis mit Schaden.
 - **Deine Buffs:** Blutedelsteine, Gasthauszauber, Extra-Gold und dein Board mit allen Buffs.
 - **Diener nach Gasthausstufe:** alle Diener, die in deiner Lobby vorkommen können, nach Dienertyp sortiert.
-- **Lobby** mit Platz, Lebensbalken und dem letzten Board jedes Spielers.
+- **Lobby** mit Platz, Lebensbalken, Drillingen, Schmuckstücken und dem letzten Board jedes Spielers,
+  dazu die Anomalie der Lobby.
 - **Zusammenfassung** am Spielende und eine **Historie** mit Statistik pro Held.
 
 Hearthwatch liest nur die Log-Dateien, die Hearthstone selbst schreibt. Es greift weder ins Spiel

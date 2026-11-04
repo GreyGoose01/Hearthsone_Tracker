@@ -21,6 +21,8 @@ What it contains (and what the tests rely on):
 * Round 2: recruit, tavern tier 2, next opponent PLAYER_ID 5 (hero E), E tiers
   up, a game-wide buff on our player, 2 extra gold next turn, our beast buffed
   to 3/3 by an enchantment.
+  E also makes a triple and gets a trinket; our trinket uses the numeric tag
+  id 3741. The game entity carries an anomaly (BACON_GLOBAL_ANOMALY_DBID).
 * Game over: placement 3.
 """
 
@@ -82,6 +84,7 @@ def build() -> list[str]:
     p("GameEntity EntityID=1", 1)
     p("tag=TURN value=0", 2)
     p("tag=STATE value=RUNNING", 2)
+    p("tag=BACON_GLOBAL_ANOMALY_DBID value=90001", 2)
     p(f"Player EntityID=2 PlayerID={ME} GameAccountId=[hi=144115198130930503 lo=12345678]", 1)
     p(f"tag=CONTROLLER value={ME}", 2)
     p("tag=CARDTYPE value=PLAYER", 2)
@@ -196,6 +199,10 @@ def build() -> list[str]:
     p(f"TAG_CHANGE Entity={ME_NAME} tag=NEXT_OPPONENT_PLAYER_ID value=5")
     # hero E levels up; a game-wide buff on our player; gold next turn; our beast gets a buff
     tag(14, "BG_HERO_E", BOB, "PLAYER_TECH_LEVEL", 2, zone="SETASIDE")
+    # E makes a triple and has a trinket; our trinket arrives with its numeric tag id
+    tag(14, "BG_HERO_E", BOB, "PLAYER_TRIPLES", 1, zone="SETASIDE")
+    tag(14, "BG_HERO_E", BOB, "BACON_FIRST_TRINKET_DATABASE_ID", 90002, zone="SETASIDE")
+    tag(10, "BG_HERO_A", ME, "3741", 90003)
     p(f"FULL_ENTITY - Updating {ref(70, 'BG_PLAYER_BUFF', ME, 'PLAY')} CardID=BG_PLAYER_BUFF")
     p(f"tag=CONTROLLER value={ME}", 1)
     p("tag=CARDTYPE value=ENCHANTMENT", 1)

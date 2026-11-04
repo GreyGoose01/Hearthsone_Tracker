@@ -117,6 +117,9 @@ class OpponentInfo:
     max_health: int = 0  # HEALTH tag: starting health, for the health bar
     tier_up_round: int = 0  # round of the last tavern tier increase (0 = never)
     main_tribe: str = ""  # most common tribe in the last seen board
+    triples: int = 0  # PLAYER_TRIPLES
+    triple_round: int = 0  # round of the last triple (0 = none seen)
+    trinkets: list[str] = field(default_factory=list)  # names of the player's trinkets
     wins: int = 0  # your combats against this player in this game
     draws: int = 0
     losses: int = 0
@@ -145,6 +148,8 @@ class LiveState:
     health: int = 0
     armor: int = 0
     tribes_seen: list[str] = field(default_factory=list)
+    anomaly: str = ""  # name of the lobby's anomaly (or deity with Aberrations)
+    anomaly_text: str = ""  # its card text, plain
     tribes_banned: list[str] = field(default_factory=list)
     opponents: list[OpponentInfo] = field(default_factory=list)
     next_opponent: str = ""
