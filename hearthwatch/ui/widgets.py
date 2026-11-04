@@ -79,6 +79,7 @@ CSS = """
           background: @error_bg_color; color: @error_fg_color; }
 .last-line { font-size: 0.9em; }
 .pool-card { padding: 8px; }
+.tribe-chip.anomaly { background: alpha(@accent_bg_color, 0.18); color: @accent_color; font-weight: 700; }
 .pool-text { font-size: 0.8em; opacity: 0.85; }
 statuspage.mascot image.icon { -gtk-icon-size: 220px; }
 """

@@ -289,3 +289,33 @@ def test_lobby_details(bg_log, cards):
     assert (c.wins, c.draws, c.losses) == (0, 0, 1)  # we lost round 1 against C
     assert c.main_tribe in ("MURLOC", "DEMON")
     assert d.max_health == 30 and abs(d.health_fraction - 23 / 30) < 1e-9
+
+
+def test_anomaly_triples_and_trinkets(bg_log, cards):
+    _, _, states, _, _ = run(bg_log, cards)
+    s = next(s for s in reversed(states) if s.in_game and s.round == 2)
+    assert s.anomaly == "Große Anomalie"
+    assert s.anomaly_text == "Alle Diener haben +1/+1."
+    by_hero = {o.hero_card_id: o for o in s.opponents}
+    assert (by_hero["BG_HERO_E"].triples, by_hero["BG_HERO_E"].triple_round) == (1, 2)
+    assert by_hero["BG_HERO_E"].trinkets == ["Glücksmünze"]
+    assert by_hero["BG_HERO_A"].trinkets == ["Kristallkugel"]  # numeric tag id 3741
+    assert by_hero["BG_HERO_C"].triples == 0 and by_hero["BG_HERO_C"].trinkets == []
+
+
+def test_unknown_dbf_ids_still_show_something(bg_log):
+    from hearthwatch.cards import CardDB
+
+    _, _, states, _, _ = run(bg_log, CardDB())
+    s = next(s for s in reversed(states) if s.in_game and s.round == 2)
+    assert s.anomaly == "#90001"
+
+
+def test_lobby_types_come_from_single_type_pool_minions(pool_cards):
+    from hearthwatch.power.entities import Entity
+
+    t = BattlegroundsTracker(pool_cards, lambda s: None, lambda c: None, lambda r: None)
+    for cid in ("P_BEAST1", "P_DUAL", "P_TOKEN", "P_NEUTRAL", "P_NAGA"):
+        t._note_tribes(Entity(1, cid, {"CARDRACE": "BEAST"}))
+    # dual type (Beast/Undead) and the token (not in the pool) teach nothing
+    assert t._tribes_seen == {"BEAST", "NAGA"}

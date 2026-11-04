@@ -62,6 +62,16 @@ def result_text(result: str) -> str:
     return _(RESULT_TEXT[result])
 
 
+def triples_text(o: OpponentInfo) -> str:
+    if not o.triples:
+        return ""
+    return (_("{n} triple") if o.triples == 1 else _("{n} triples")).format(n=o.triples)
+
+
+def trinkets_text(o: OpponentInfo) -> str:
+    return _("Trinkets: {names}").format(names=", ".join(o.trinkets)) if o.trinkets else ""
+
+
 def record_text(o: OpponentInfo) -> str:
     """Your record against a player, e.g. "2 W · 1 L" (W/D/L = win/draw/loss)."""
     if not (o.wins or o.draws or o.losses):
@@ -326,13 +336,18 @@ class MainView(Gtk.Stack):
                 self.dots.append(result_dot(result, str(rnd), tip))
         self.dots.set_visible(self.settings.show_history and any(r[1] for r in results))
 
-        if self._changed("tribes", (tuple(s.tribes_seen), tuple(s.tribes_banned), self.settings.show_tribes)):
+        if self._changed("tribes", (tuple(s.tribes_seen), tuple(s.tribes_banned), s.anomaly,
+                                    self.settings.show_tribes)):
             clear(self.tribes)
+            if s.anomaly:
+                chip = pill("✦ " + _("Anomaly: {name}").format(name=s.anomaly), "tribe-chip", "anomaly")
+                chip.set_tooltip_text(s.anomaly_text or s.anomaly)
+                self.tribes.append(chip)
             for t in s.tribes_seen:
                 self.tribes.append(pill(tribe_label(t), "tribe-chip"))
             for t in s.tribes_banned:
                 self.tribes.append(pill("✕ " + tribe_label(t), "tribe-chip", "banned"))
-        self.tribes.set_visible(self.settings.show_tribes and bool(s.tribes_seen or s.tribes_banned))
+        self.tribes.set_visible(bool(s.anomaly) or (self.settings.show_tribes and bool(s.tribes_seen or s.tribes_banned)))
 
     def _update_focus(self, s: LiveState) -> None:
         last = s.last_combat
@@ -352,7 +367,7 @@ class MainView(Gtk.Stack):
             self.focus.set_visible_child_name("next")
         nxt = next((o for o in s.opponents if o.is_next_opponent), None)
         sig = (nxt.lobby_player_id, nxt.hero_name, nxt.health, nxt.armor, nxt.tavern_tier,
-               nxt.tier_up_round, nxt.main_tribe, record_text(nxt),
+               nxt.tier_up_round, nxt.main_tribe, record_text(nxt), nxt.triples, tuple(nxt.trinkets),
                self._board_sig(nxt.last_board.minions) if nxt.last_board else None,
                self.settings.show_art) if nxt else None
         if self._changed("next", sig):
@@ -402,11 +417,18 @@ class MainView(Gtk.Stack):
             meta.append(tier)
         if o.main_tribe:
             meta.append(tribe_label(o.main_tribe))
+        if triples_text(o):
+            meta.append(triples_text(o) + (" " + _("(last in round {round})").format(round=o.triple_round)
+                                            if o.triple_round else ""))
         if record_text(o):
             meta.append(_("Record {record}").format(record=record_text(o)))
         meta_label = Gtk.Label(label=" · ".join(meta), xalign=0, wrap=True)
         meta_label.add_css_class("meta")
         text.append(meta_label)
+        if o.trinkets:
+            trinkets = Gtk.Label(label=trinkets_text(o), xalign=0, wrap=True)
+            trinkets.add_css_class("meta")
+            text.append(trinkets)
         row.append(text)
         self.next_box.append(row)
         if o.last_board is not None:
@@ -496,6 +518,7 @@ class MainView(Gtk.Stack):
         sig = tuple(
             (o.lobby_player_id, o.hero_name, o.place, o.health, o.armor, o.max_health, o.tavern_tier,
              o.tier_up_round, o.main_tribe, record_text(o), o.is_me, o.is_next_opponent,
+             o.triples, tuple(o.trinkets),
              (o.last_board.round, self._board_sig(o.last_board.minions)) if o.last_board else None)
             for o in s.opponents
         ) + ((self.settings.show_art, self.settings.show_lobby_boards),)
@@ -553,6 +576,8 @@ class MainView(Gtk.Stack):
             meta.append(tier)
         if o.main_tribe and not o.dead:
             meta.append(tribe_label(o.main_tribe))
+        if triples_text(o) and not o.dead:
+            meta.append(triples_text(o))
         if record_text(o):
             meta.append(record_text(o))
         if not o.is_me and not o.dead and o.last_board is None:
@@ -560,6 +585,11 @@ class MainView(Gtk.Stack):
         sub = Gtk.Label(label=" · ".join(meta), xalign=0, ellipsize=Pango.EllipsizeMode.END)
         sub.add_css_class("meta")
         text.append(sub)
+        if o.trinkets and not o.dead:
+            trinkets = Gtk.Label(label=trinkets_text(o), xalign=0, ellipsize=Pango.EllipsizeMode.END)
+            trinkets.add_css_class("meta")
+            trinkets.set_tooltip_text(", ".join(o.trinkets))
+            text.append(trinkets)
         top.append(text)
         row.append(top)
         if (self.settings.show_lobby_boards and o.last_board is not None

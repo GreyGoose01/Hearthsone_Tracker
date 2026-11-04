@@ -22,6 +22,10 @@ def cards() -> CardDB:
         {"id": "BG_PLAYER_BUFF", "name": "Blutedelstein-Bonus", "type": "ENCHANTMENT"},
         {"id": "BG_SHOP_BEAST", "name": "Wildschwein", "type": "MINION", "races": ["BEAST"], "techLevel": 1},
         {"id": "BG_OPP_2", "name": "Dämonchen", "type": "MINION", "races": ["DEMON"], "techLevel": 2},
+        {"id": "BG_ANOMALY_X", "dbfId": 90001, "name": "Große Anomalie", "type": "BATTLEGROUND_ANOMALY",
+         "text": "<b>Alle</b> Diener haben +1/+1."},
+        {"id": "BG_TRINKET_X", "dbfId": 90002, "name": "Glücksmünze", "type": "BATTLEGROUND_TRINKET"},
+        {"id": "BG_TRINKET_Y", "dbfId": 90003, "name": "Kristallkugel", "type": "BATTLEGROUND_TRINKET"},
     ])
 
 

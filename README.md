@@ -15,7 +15,8 @@ A live Battlegrounds tracker for Hearthstone on Linux. Made for
   result and damage.
 - **Your buffs:** Blood Gems, tavern spells, extra gold and your board with every buff.
 - **Minions by tier:** every tavern minion that can show up in your lobby, grouped by minion type.
-- **Lobby** with places, health bars and the last board of every player.
+- **Lobby** with places, health bars, triples, trinkets and the last board of every player, plus the
+  lobby's anomaly.
 - **Summary** at the end of a game, plus a **history** with stats per hero.
 
 Hearthwatch only reads the log files Hearthstone writes. It does not touch the game or its memory.

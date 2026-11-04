@@ -33,7 +33,7 @@ from hearthwatch.bg.models import (
     Minion,
     OpponentInfo,
 )
-from hearthwatch.cards import BG_TRIBES, CardDB, hero_base_id
+from hearthwatch.cards import BG_TRIBES, CardDB, card_text, hero_base_id
 from hearthwatch.power.entities import Entity
 from hearthwatch.power.game_state import GameListener, GameState
 from hearthwatch.i18n import N_, _
@@ -54,6 +54,12 @@ COUNTERS = (
     (("BACON_PLAYER_EXTRA_GOLD_NEXT_TURN",), N_("Gold next turn")),
     (("BACON_FREE_REFRESH_COUNT",), N_("Free refreshes")),
 )
+# Battlegrounds tags; older or newer clients may print the numeric id instead of the
+# name (ids from HearthSim's python-hearthstone enums)
+ANOMALY_TAGS = ("BACON_GLOBAL_ANOMALY_DBID", "2897")
+DEITY_TAGS = ("BACON_GLOBAL_OLD_GOD_DBID", "4902")  # only active with Aberrations in the lobby
+TRIPLE_TAGS = ("PLAYER_TRIPLES", "1447")
+TRINKET_TAGS = (("BACON_FIRST_TRINKET_DATABASE_ID", "3741"), ("BACON_SECOND_TRINKET_DATABASE_ID", "3742"))
 BLOOD_GEM_TAG = "BACON_BLOODGEMBUFFATKVALUE"
 GOLD_TAG = "BACON_PLAYER_EXTRA_GOLD_NEXT_TURN"
 # internal enchantments on the player that are no buffs worth showing
@@ -67,6 +73,14 @@ MAX_SURVIVORS, MAX_TIER, DAMAGE_BUFFER = 7, 7, 20
 
 def max_plausible_damage(winner_tier: int) -> int:
     return max(winner_tier, 1) + MAX_SURVIVORS * MAX_TIER + DAMAGE_BUFFER
+
+
+def _int(entity: Entity, *tags: str) -> int:
+    """Value of the first of ``tags`` the entity has (a tag by name or by numeric id)."""
+    for t in tags:
+        if t in entity.tags:
+            return entity.int_tag(t)
+    return 0
 
 
 def _latest(entities: list[Entity], *tags: str) -> Entity:
@@ -152,6 +166,7 @@ class BattlegroundsTracker(GameListener):
         self._hp_exclude: set[int] = set()
         self._hp_before: dict[str, int | None] = {}
         self._tier_up: dict[str, int] = {}  # lobby key -> round of the last tier increase
+        self._triple_round: dict[str, int] = {}  # lobby key -> round of the last triple
         self._blocks: list[str] = []
         self._dirty = False
 
@@ -347,12 +362,16 @@ class BattlegroundsTracker(GameListener):
         elif tag == "PLAYER_TECH_LEVEL" and entity.is_hero and isinstance(new, int) and isinstance(old, int):
             if new > old and entity.int_tag("PLAYER_ID") > 0:
                 self._tier_up[self._lobby_key(entity)] = self.state.round
+        elif tag in TRIPLE_TAGS and entity.is_hero and isinstance(new, int):
+            if new > (old if isinstance(old, int) else 0) and entity.int_tag("PLAYER_ID") > 0:
+                self._triple_round[self._lobby_key(entity)] = self.state.round
         if entity.is_minion or entity.card_type == "ENCHANTMENT" or entity.card_type == "PLAYER":
             if self.state.phase != "combat":
                 self._dirty = True  # your live board and buffs
         if tag in (
             "PLAYER_LEADERBOARD_PLACE", "HEALTH", "DAMAGE", "ARMOR", "PLAYER_TECH_LEVEL",
             "HERO_ENTITY", "NEXT_OPPONENT_PLAYER_ID", "TURN", "PLAYER_ID",
+            *TRIPLE_TAGS, *(t for pair in TRINKET_TAGS for t in pair), *ANOMALY_TAGS, *DEITY_TAGS,
         ):
             self._dirty = True
 
@@ -460,6 +479,18 @@ class BattlegroundsTracker(GameListener):
             self._note_tribes(entity)
 
     def _note_tribes(self, entity: Entity) -> None:
+        """Learn the lobby's minion types from Bob's offers.
+
+        Only tavern pool minions with exactly one type count: a dual-type minion
+        is offered when just one of its types is in the lobby, and tokens or
+        discovered minions can have any type. Without pool data in the card
+        database (or for unknown cards) every type counts, as before.
+        """
+        info = self.cards.get(entity.card_id)
+        if info is not None and self._pool_known():
+            types = [r for r in info.races if r in BG_TRIBES]
+            if not info.bg_pool or len(types) != 1:
+                return
         before = len(self._tribes_seen)
         self._tribes_seen.update(r for r in self._races(entity) if r in BG_TRIBES)
         if len(self._tribes_seen) != before:
@@ -772,6 +803,9 @@ class BattlegroundsTracker(GameListener):
                 max_health=health_e.int_tag("HEALTH"),
                 tier_up_round=self._tier_up.get(key, 0),
                 main_tribe=self._main_tribe(last_board),
+                triples=_int(_latest(ents, *TRIPLE_TAGS), *TRIPLE_TAGS),
+                triple_round=self._triple_round.get(key, 0),
+                trinkets=self._trinkets(ents),
             )
             for c in s.combat_log:  # your record against this player
                 if c.actual is not None and c.opponent_player_id and f"p{c.opponent_player_id}" == key:
@@ -799,10 +833,41 @@ class BattlegroundsTracker(GameListener):
         s.player_buffs = self._player_buffs(game, player, hero)
         s.counters = self._counters(game)
         s.tribes_seen = sorted(self._tribes_seen)
+        s.anomaly, s.anomaly_text = self._anomaly(game)
         if len(self._tribes_seen) >= TRIBES_PER_LOBBY:
             s.tribes_banned = sorted(set(BG_TRIBES) - self._tribes_seen)
         else:
             s.tribes_banned = []
+
+    def _pool_known(self) -> bool:
+        """Does the card database know the tavern pool? (cached per database)"""
+        if getattr(self, "_pool_cards", None) is not self.cards:
+            self._pool_cards = self.cards
+            self._has_pool = any(c.bg_pool for c in self.cards.bg_minions())
+        return self._has_pool
+
+    def _card_by_dbf(self, dbf_id: int) -> tuple[str, str]:
+        info = self.cards.by_dbf(dbf_id) if dbf_id else None
+        if info is None:
+            return (f"#{dbf_id}", "") if dbf_id else ("", "")
+        return info.name, card_text(info.text)
+
+    def _trinkets(self, ents: list[Entity]) -> list[str]:
+        names = []
+        for tags in TRINKET_TAGS:
+            dbf = _int(_latest(ents, *tags), *tags)
+            if dbf:
+                names.append(self._card_by_dbf(dbf)[0])
+        return names
+
+    def _anomaly(self, game: GameState) -> tuple[str, str]:
+        ge = game.game_entity
+        if ge is None:
+            return "", ""
+        dbf = _int(ge, *ANOMALY_TAGS)
+        if not dbf and "ABERRATION" in self._tribes_seen:
+            dbf = _int(ge, *DEITY_TAGS)
+        return self._card_by_dbf(dbf)
 
     def batch_done(self, game: GameState) -> None:
         """Call after feeding a batch of lines; emits one update if needed."""
