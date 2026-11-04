@@ -1,0 +1,35 @@
+diff --git a/crates/taverngym/src/debug.rs b/crates/taverngym/src/debug.rs
+index 66a4405..6dfdc51 100644
+--- a/crates/taverngym/src/debug.rs
++++ b/crates/taverngym/src/debug.rs
+@@ -974,6 +974,11 @@ pub enum DebugCmd {
+     SetTurn {
+         turn: u32,
+     },
++    /// Set "this game" counters of a player (fields of `PlayerStats`, e.g. `beetle_atk`).
++    SetStats {
++        p: PlayerId,
++        stats: serde_json::Map<String, Value>,
++    },
+     /// Create a minion (by card id string) in board/hand/shop.
+     AddMinion {
+         p: PlayerId,
+@@ -1168,6 +1173,18 @@ pub fn run_debug(g: &mut Game, cmd: DebugCmd) -> Result<Value, String> {
+             }
+         }
+         DebugCmd::SetTurn { turn } => g.turn = turn.max(1),
++        DebugCmd::SetStats { p, stats } => {
++            check(p)?;
++            let pl = &mut g.players[p];
++            let mut v = serde_json::to_value(&pl.stats).map_err(|e| e.to_string())?;
++            for (k, val) in stats {
++                if v.get(&k).is_none() {
++                    return Err(format!("unknown stat {k}"));
++                }
++                v[k.as_str()] = val;
++            }
++            pl.stats = serde_json::from_value(v).map_err(|e| e.to_string())?;
++        }
+         DebugCmd::AddMinion {
+             p,
+             zone,

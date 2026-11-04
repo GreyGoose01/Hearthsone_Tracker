@@ -63,6 +63,15 @@ DEITY_TAGS = ("BACON_GLOBAL_OLD_GOD_DBID", "4902")  # only active with Aberratio
 TRIPLE_TAGS = ("PLAYER_TRIPLES", "1447")
 TRINKET_TAGS = (("BACON_FIRST_TRINKET_DATABASE_ID", "3741"), ("BACON_SECOND_TRINKET_DATABASE_ID", "3742"))
 BLOOD_GEM_TAG = "BACON_BLOODGEMBUFFATKVALUE"
+# Beetles: minions that "Summon a {0}/{1} Beetle" carry the current Beetle stats in their script
+# data; the player enchantment holds the bonus on top of the 2/2 Beetle
+BEETLE_SUMMONERS = {"BG31_801", "BG31_803", "BG31_808", "BG31_809", "BG36_209"}
+BEETLE_BASE = (2, 2)
+BEETLE_ARMY = "BG31_808pe"
+TASTY_LOBSTER = "BG36_202"  # "Give a random friendly Beast +{0}/+{1}. Improve your future ..."
+UNDEAD_ATTACK = "BG25_011pe"  # "Give Attack to Undead": your Undead have +N Attack this game
+# player enchantments shown as counters instead of buff chips
+COUNTER_ENCHANTMENTS = {BEETLE_ARMY, UNDEAD_ATTACK, "BG26_159pe", "BG31_830pe", "BG32_861pe"}
 GOLD_TAG = "BACON_PLAYER_EXTRA_GOLD_NEXT_TURN"
 # internal enchantments on the player that are no buffs worth showing
 INTERNAL_ENCHANTMENTS = ("TB_BaconShop", "Bacon_", "TB_Bacon", "BG_ShopBuff")
@@ -566,6 +575,9 @@ class BattlegroundsTracker(GameListener):
             opp_tier = _latest(opp_entities, "PLAYER_TECH_LEVEL").int_tag("PLAYER_TECH_LEVEL")
 
         my_board = self._board(game, local)
+        owners = self._owners(game)
+        my_entities = self._board_entities(game, local)
+        my_beetle = self._beetle(game, my_entities, owners)
         opp_entities_board = self._opponent_combat_minions(game)
         attachments = self._attachments(game)
         opp_board = [self._minion(e, attachments) for e in opp_entities_board]
@@ -577,6 +589,9 @@ class BattlegroundsTracker(GameListener):
             hero_name=self._card_name(my_hero.card_id) if my_hero else "",
             tavern_tier=self.state.tavern_tier or 1,
             minions=my_board,
+            beetle=my_beetle,
+            undead_attack=self._undead_attack(game, owners),
+            lobster_bonus=self._lobster_bonus(my_entities),
         )
         them = BoardSnapshot(
             round=self.state.round,
@@ -584,6 +599,8 @@ class BattlegroundsTracker(GameListener):
             hero_name=self._card_name(opp_card) if opp_card else "?",
             tavern_tier=opp_tier or 1,
             minions=opp_board,
+            beetle=self._beetle(game, opp_entities_board, set()),
+            lobster_bonus=self._lobster_bonus(opp_entities_board),
         )
         if opp_key:
             self._boards[opp_key] = them
@@ -783,8 +800,47 @@ class BattlegroundsTracker(GameListener):
             e for e in game.entities.values()
             if e.card_type == "ENCHANTMENT" and e.zone == "PLAY" and e.int_tag("ATTACHED") in targets
             and e.card_id and not e.card_id.startswith(INTERNAL_ENCHANTMENTS)
+            and e.card_id not in COUNTER_ENCHANTMENTS
         ]
         return self._buff_details(enchantments)
+
+    def _player_enchantment(self, game: GameState, card_id: str, owners: set[int]) -> Entity | None:
+        found = [e for e in game.entities.values()
+                 if e.card_id == card_id and e.zone == "PLAY" and e.int_tag("ATTACHED") in owners]
+        return _latest(found, "TAG_SCRIPT_DATA_NUM_1", "TAG_SCRIPT_DATA_NUM_2") if found else None
+
+    def _beetle(self, game: GameState, minions: list[Entity], owners: set[int]) -> tuple[int, int]:
+        """The stats of the Beetles this player summons, (0, 0) if unknown."""
+        for e in minions:
+            if e.card_id.removesuffix("_G") in BEETLE_SUMMONERS:
+                atk, hp = self._script_values(e)
+                if atk > 0 and hp > 0:
+                    return atk, hp
+        army = self._player_enchantment(game, BEETLE_ARMY, owners)
+        if army is not None:
+            atk, hp = self._script_values(army)
+            return BEETLE_BASE[0] + atk, BEETLE_BASE[1] + hp
+        return 0, 0
+
+    def _lobster_bonus(self, minions: list[Entity]) -> int:
+        """Improvements of this player's Tasty Lobsters: a Lobster gives +2/+1 per level
+        (twice that when golden), level 1 + the improvements."""
+        for e in minions:
+            if e.card_id.removesuffix("_G") == TASTY_LOBSTER:
+                per_level = 4 if e.card_id.endswith("_G") or e.int_tag("PREMIUM") else 2
+                atk = self._script_values(e)[0]
+                if atk >= per_level:
+                    return atk // per_level - 1
+        return 0
+
+    def _undead_attack(self, game: GameState, owners: set[int]) -> int:
+        bonus = self._player_enchantment(game, UNDEAD_ATTACK, owners)
+        return self._script_values(bonus)[0] if bonus is not None else 0
+
+    def _owners(self, game: GameState) -> set[int]:
+        """Your player and hero entity: where game-wide enchantments are attached."""
+        player = self._local_player(game)
+        return {e.id for e in (player, self._hero_of(game, player)) if e is not None}
 
     def _counters(self, game: GameState) -> list[str]:
         local = self.local_player_id(game)
@@ -796,6 +852,13 @@ class BattlegroundsTracker(GameListener):
             if e.controller == local and (e is player or e.zone == "PLAY")
         ]
         out = []
+        owners = self._owners(game)
+        beetle = self._beetle(game, [e for e in mine if e.zone in ("PLAY", "HAND")], owners)
+        if beetle != (0, 0):
+            out.append(_("Beetles {attack}/{health}").format(attack=beetle[0], health=beetle[1]))
+        undead = self._undead_attack(game, owners)
+        if undead:
+            out.append(_("Undead +{attack} Attack").format(attack=undead))
         for tags, label in COUNTERS:
             with_tag = [e for e in mine if any(t in e.tags for t in tags)]
             if not with_tag:

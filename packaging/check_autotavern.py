@@ -10,4 +10,11 @@ snap = CombatSnapshot(round=1, player=BoardSnapshot(1, "", "", 1, board),
                       opponent=BoardSnapshot(1, "", "", 1, [Minion("BG31_149", 2, 1)]))
 result = simulate_combat(snap, runs=200)
 assert result.engine == "autotavern", result
+# our patch: the strength of the Beetles is known (a 1/1 vs. its deathrattle Beetles)
+vermin = CombatSnapshot(round=5, player=BoardSnapshot(5, "", "", 2, [Minion("BG31_803", 1, 1, taunt=True)]),
+                        opponent=BoardSnapshot(5, "", "", 2, [Minion("BG31_149", 9, 9)]))
+weak = simulate_combat(vermin, runs=200)
+vermin.player.beetle = (40, 40)
+strong = simulate_combat(vermin, runs=200)
+assert weak.engine == strong.engine == "autotavern" and strong.win > weak.win, (weak, strong)
 print("AutoTavern", autotavern.version(), "->", result)

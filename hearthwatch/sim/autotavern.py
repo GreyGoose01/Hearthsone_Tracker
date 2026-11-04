@@ -103,6 +103,9 @@ def _keywords(m: Minion) -> list[str]:
     return kw
 
 
+BEETLE_BASE = (2, 2)  # a Beetle without any bonus
+
+
 class UnknownCard(Exception):
     pass
 
@@ -122,6 +125,19 @@ def _setup(game, snapshot: CombatSnapshot) -> None:
                 pass  # an unknown hero only loses its hero power
         # plenty of health: we want the raw damage and judge lethal ourselves
         cmd(cmd="set_player", p=seat, tier=max(board.tavern_tier, 1), health=HEALTH, armor=0)
+        # "this game" strength (before the minions, which take it as already applied)
+        stats = {}
+        if board.beetle != (0, 0):
+            stats.update(beetle_atk=board.beetle[0] - BEETLE_BASE[0], beetle_hp=board.beetle[1] - BEETLE_BASE[1])
+        if board.undead_attack:
+            stats["undead_atk"] = board.undead_attack
+        if board.lobster_bonus:
+            stats["lobster_bonus"] = board.lobster_bonus
+        if stats:
+            try:
+                cmd(cmd="set_stats", p=seat, stats=stats)
+            except ValueError:
+                log.debug("this AutoTavern build cannot set %s", sorted(stats))
         for index, m in enumerate(board.minions):
             for card, golden in ((m.card_id, m.golden), (m.card_id.removesuffix("_G"), True)):
                 try:

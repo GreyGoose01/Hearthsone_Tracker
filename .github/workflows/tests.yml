@@ -82,7 +82,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             .autotavern-target
-          key: autotavern-${{ hashFiles('packaging/autotavern.env') }}
+          key: autotavern-${{ hashFiles('packaging/autotavern.env', 'packaging/autotavern-*.patch') }}
       - name: Build AutoTavern's simulator
         run: packaging/build-autotavern.sh dist/autotavern
       - uses: actions/upload-artifact@v4

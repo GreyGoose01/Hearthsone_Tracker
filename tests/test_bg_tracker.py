@@ -469,3 +469,61 @@ def test_a_reset_combat_copy_does_not_change_the_lobby_health(cards):
     tracker.flush()
     them = next(o for o in states[-1].opponents if o.hero_card_id == "BG_HERO_C")
     assert (them.health, them.armor, them.tavern_tier) == (30, 12, 2)
+
+
+def _beetle_game(cards, with_vermin: bool):
+    p = "D 20:00:00.0 PowerTaskList.DebugPrintPower() - "
+
+    def ent(eid, card, zone, ctype, *tags):
+        return [p + f"FULL_ENTITY - Updating [entityName={card} id={eid} zone={zone} zonePos=1 cardId={card} "
+                    f"player=5] CardID={card}",
+                p + "    tag=CONTROLLER value=5", p + f"    tag=CARDTYPE value={ctype}",
+                p + f"    tag=ZONE value={zone}"] + [p + f"    tag={t} value={v}" for t, v in tags]
+
+    lines = [
+        "D 20:00:00.0 GameState.DebugPrintGame() - GameType=GT_BATTLEGROUNDS",
+        p + "CREATE_GAME", p + "    GameEntity EntityID=1", p + "        tag=TURN value=3",
+        p + "    Player EntityID=2 PlayerID=5 GameAccountId=[hi=1 lo=2]",
+        p + "        tag=CONTROLLER value=5", p + "        tag=CARDTYPE value=PLAYER",
+        *ent(10, "BG_HERO_A", "PLAY", "HERO", ("HEALTH", 30)),
+        p + "TAG_CHANGE Entity=2 tag=HERO_ENTITY value=10",
+        # Beetle Army on the player: Beetles have +4/+2 this game
+        *ent(30, "BG31_808pe", "PLAY", "ENCHANTMENT", ("ATTACHED", 2), ("TAG_SCRIPT_DATA_NUM_1", 4),
+             ("TAG_SCRIPT_DATA_NUM_2", 2)),
+        *ent(31, "BG25_011pe", "PLAY", "ENCHANTMENT", ("ATTACHED", 10), ("TAG_SCRIPT_DATA_NUM_1", 3)),
+    ]
+    if with_vermin:  # its "Summon a {0}/{1} Beetle" carries the exact stats
+        lines += ent(20, "BG31_803", "PLAY", "MINION", ("ATK", 1), ("HEALTH", 1),
+                     ("TAG_SCRIPT_DATA_NUM_1", 7), ("TAG_SCRIPT_DATA_NUM_2", 5))
+    tracker = BattlegroundsTracker(cards)
+    game = GameState([tracker])
+    game.feed_lines(lines)
+    return tracker, game
+
+
+def test_beetles_and_undead_strength_from_the_player_enchantments(cards):
+    tracker, game = _beetle_game(cards, with_vermin=False)
+    counters = tracker._counters(game)
+    from hearthwatch.i18n import _
+    assert _("Beetles {attack}/{health}").format(attack=6, health=4) in counters  # 2/2 plus +4/+2
+    assert _("Undead +{attack} Attack").format(attack=3) in counters
+    names, _texts = tracker._player_buffs(game, tracker._local_player(game), game.entities[10])
+    assert not any("Beetle" in n for n in names)  # shown as a counter, not twice
+
+
+def test_beetle_stats_from_a_summoner_win_over_the_enchantment(cards):
+    tracker, game = _beetle_game(cards, with_vermin=True)
+    from hearthwatch.i18n import _
+    assert _("Beetles {attack}/{health}").format(attack=7, health=5) in tracker._counters(game)
+    assert tracker._beetle(game, tracker._board_entities(game, 5), set()) == (7, 5)
+
+
+def test_tasty_lobster_improvements_from_its_text_values(cards):
+    tracker, game = _beetle_game(cards, with_vermin=False)
+    from hearthwatch.power.entities import Entity
+
+    lobster = Entity(40, "BG36_202", {"TAG_SCRIPT_DATA_NUM_1": 8, "TAG_SCRIPT_DATA_NUM_2": 4})
+    golden = Entity(41, "BG36_202_G", {"TAG_SCRIPT_DATA_NUM_1": 12, "TAG_SCRIPT_DATA_NUM_2": 6})
+    assert tracker._lobster_bonus([lobster]) == 3  # +8/+4 = level 4: improved three times
+    assert tracker._lobster_bonus([golden]) == 2  # golden gives twice: +12/+6 = level 3
+    assert tracker._lobster_bonus([]) == 0
