@@ -38,7 +38,10 @@ def simulate(
     time_budget: float = 2.0,
     player_health: int | None = None,
     en_names: Callable[[str], str] | None = None,
+    damage_cap: int = 0,
 ) -> SimResult:
+    """Monte Carlo over random targets/order. ``damage_cap`` (> 0) limits the hero
+    damage of one combat, as the game does in the early rounds."""
     rng = random.Random(seed)
     wins = draws = losses = 0
     dealt = taken = lethal = 0
@@ -47,13 +50,14 @@ def simulate(
     for done in range(1, runs + 1):
         out = simulate_once(player, opponent, player_tier, opponent_tier, rng,
                             DEATHRATTLES, en_names)
+        damage = min(out.damage, damage_cap) if damage_cap > 0 else out.damage
         if out.result == "win":
             wins += 1
-            dealt += out.damage
+            dealt += damage
         elif out.result == "loss":
             losses += 1
-            taken += out.damage
-            if player_health is not None and out.damage >= player_health:
+            taken += damage
+            if player_health is not None and damage >= player_health:
                 lethal += 1
         else:
             draws += 1
@@ -88,5 +92,6 @@ def simulate_combat(snapshot: CombatSnapshot, player_health: int | None = None,
         snapshot.opponent.tavern_tier,
         player_health=player_health,
         en_names=en_names,
+        damage_cap=getattr(snapshot, "damage_cap", 0),
         **kw,
     )

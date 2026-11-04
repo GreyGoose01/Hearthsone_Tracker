@@ -350,3 +350,6 @@ def test_internal_helper_enchantments_are_hidden_or_renamed(cards):
     t = BattlegroundsTracker(db, lambda s: None, lambda c: None, lambda r: None)
     names, texts = t._buff_details([Entity(1, "E_POET"), Entity(2, "E_TECH")])
     assert names == ["Persistent Poet"] and texts == ["Adjacent minions keep your enchantments."]
+def test_combat_snapshot_knows_the_damage_cap(bg_log, cards):
+    _, _, _, combats, _ = run(bg_log, cards)
+    assert combats[0].damage_cap == 5

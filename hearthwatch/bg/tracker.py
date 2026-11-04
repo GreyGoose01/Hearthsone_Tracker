@@ -600,7 +600,8 @@ class BattlegroundsTracker(GameListener):
         self._hp_before = {side: self._effective_hp(game, side) for side in ("me", "opp")}
 
         combat = CombatSnapshot(
-            round=self.state.round, player=me, opponent=them, opponent_player_id=max(opp_pid, 0)
+            round=self.state.round, player=me, opponent=them, opponent_player_id=max(opp_pid, 0),
+            damage_cap=self._damage_cap(game),
         )
         self._current = combat
         self.state.last_combat = combat
@@ -611,6 +612,15 @@ class BattlegroundsTracker(GameListener):
         self._emit()
         if self.on_combat:
             self.on_combat(copy.deepcopy(combat))
+
+    @staticmethod
+    def _damage_cap(game: GameState) -> int:
+        """The game's damage cap for this combat (5, 10, 15 ... early on; off with 4 or
+        fewer players left) - 0 when there is none."""
+        ge = game.game_entity
+        if ge is None or not ge.int_tag("BACON_COMBAT_DAMAGE_CAP_ENABLED"):
+            return 0
+        return max(ge.int_tag("BACON_COMBAT_DAMAGE_CAP"), 0)
 
     def _note_hero_damage(self, entity: Entity, tag: str, old, new) -> None:
         if self._current is None or self._current.actual is not None:
