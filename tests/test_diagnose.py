@@ -130,3 +130,16 @@ def test_log_size_limit_is_checked_and_fixed(home, capsys):
     assert diagnose.first_problem(diagnose.run_checks()) is None
     # the launcher's own lines are untouched
     assert (game / "client.config").read_text().startswith("Aurora.ClientCheck=false\n")
+
+
+def test_banner_only_for_errors_not_in_game_and_not_after_opening():
+    from hearthwatch.diagnose import ERROR, OK, WARN, Check, banner_key, banner_problem
+
+    warn = Check("powerlog", "Power.log", WARN, "keine")
+    err = Check("logconfig", "log.config", ERROR, "fehlt")
+    assert banner_problem([Check("game", "g", OK), warn], False, set()) is None  # warnings: no banner
+    assert banner_problem([warn, err], False, set()) is err
+    assert banner_problem([warn, err], True, set()) is None  # a game is followed: logs work
+    assert banner_problem([err], False, {banner_key(err)}) is None  # already opened
+    changed = Check("logconfig", "log.config", ERROR, "beschädigt")
+    assert banner_problem([changed], False, {banner_key(err)}) is changed  # a new problem shows again

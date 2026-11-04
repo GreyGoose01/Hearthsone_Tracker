@@ -33,7 +33,7 @@ from hearthwatch.bg.models import (
     Minion,
     OpponentInfo,
 )
-from hearthwatch.cards import BG_TRIBES, CardDB, card_text, hero_base_id
+from hearthwatch.cards import BG_TRIBES, CardDB, buff_name, card_text, hero_base_id, is_internal_name
 from hearthwatch.power.entities import Entity
 from hearthwatch.power.game_state import GameListener, GameState
 from hearthwatch.i18n import N_, _
@@ -126,6 +126,7 @@ class BattlegroundsTracker(GameListener):
                 info = self.cards.get(m.card_id)
                 if info is not None:
                     m.name = info.name
+                    m.text = m.text or card_text(info.text)
                     m.cleave = m.cleave or "CLEAVE" in info.mechanics
                 elif m.card_id and len(self.cards):
                     self.unknown_cards.add(m.card_id)
@@ -267,27 +268,55 @@ class BattlegroundsTracker(GameListener):
                 result.setdefault(target, []).append(e)
         return result
 
+    def _raw_name(self, card_id: str) -> str:
+        """Card name; the English one when the card has no name in this language
+        (some of the game's internal enchantments)."""
+        name = self.cards.name(card_id)
+        return self.cards.en_name(card_id) if name == card_id else name
+
     def _buff_text(self, enchantment: Entity) -> str:
-        name = self.cards.name(enchantment.card_id) if enchantment.card_id else "?"
+        name = buff_name(self._raw_name(enchantment.card_id)) if enchantment.card_id else "?"
         n1 = enchantment.int_tag("TAG_SCRIPT_DATA_NUM_1")
         n2 = enchantment.int_tag("TAG_SCRIPT_DATA_NUM_2")
         if n1 or n2:
             return f"{name} ({n1}/{n2})" if n2 else f"{name} ({n1})"
         return name
 
-    def _buffs(self, enchantments: list[Entity]) -> list[str]:
+    @staticmethod
+    def _script_values(entity: Entity) -> tuple[int, ...]:
+        return (entity.int_tag("TAG_SCRIPT_DATA_NUM_1"), entity.int_tag("TAG_SCRIPT_DATA_NUM_2"))
+
+    def _effect_text(self, entity: Entity) -> str:
+        """Card text of a minion or enchantment with the values of this entity."""
+        text = self.cards.text(entity.card_id) if entity.card_id else ""
+        return card_text(text, self._script_values(entity))
+
+    def _buff_details(self, enchantments: list[Entity]) -> tuple[list[str], list[str]]:
+        """Buff names (same ones grouped as "×n") and what each one does."""
         counts: dict[str, int] = {}
+        texts: dict[str, str] = {}
         for e in sorted(enchantments, key=lambda x: x.id):
-            text = self._buff_text(e)
-            counts[text] = counts.get(text, 0) + 1
-        return [f"{t} ×{n}" if n > 1 else t for t, n in counts.items()]
+            raw = self._raw_name(e.card_id) if e.card_id else ""
+            if is_internal_name(raw) and not self._effect_text(e):
+                continue  # a technical helper of the game, nothing to show
+            name = self._buff_text(e)
+            counts[name] = counts.get(name, 0) + 1
+            texts.setdefault(name, self._effect_text(e))
+        names = [f"{t} ×{n}" if n > 1 else t for t, n in counts.items()]
+        return names, [texts[t] for t in counts]
+
+    def _buffs(self, enchantments: list[Entity]) -> list[str]:
+        return self._buff_details(enchantments)[0]
 
     def _minion(self, entity: Entity, attachments: dict[int, list[Entity]] | None = None) -> Minion:
         info = self.cards.get(entity.card_id)
         if info is None and entity.card_id and len(self.cards):
             self.unknown_cards.add(entity.card_id)
+        buffs, buff_texts = self._buff_details((attachments or {}).get(entity.id, []))
         return Minion(
-            buffs=self._buffs((attachments or {}).get(entity.id, [])),
+            buffs=buffs,
+            buff_texts=buff_texts,
+            text=card_text(info.text, self._script_values(entity)) if info else "",
             card_id=entity.card_id,
             name=info.name if info else entity.card_id,
             attack=entity.int_tag("ATK"),
@@ -727,17 +756,18 @@ class BattlegroundsTracker(GameListener):
         best = max(counts.values())
         return next(t for t in BG_TRIBES if counts.get(t) == best)
 
-    def _player_buffs(self, game: GameState, player: Entity | None, hero: Entity | None) -> list[str]:
+    def _player_buffs(self, game: GameState, player: Entity | None, hero: Entity | None
+                      ) -> tuple[list[str], list[str]]:
         """Game-wide buffs: enchantments attached to your player or hero."""
         targets = {e.id for e in (player, hero) if e is not None}
         if not targets:
-            return []
+            return [], []
         enchantments = [
             e for e in game.entities.values()
             if e.card_type == "ENCHANTMENT" and e.zone == "PLAY" and e.int_tag("ATTACHED") in targets
             and e.card_id and not e.card_id.startswith(INTERNAL_ENCHANTMENTS)
         ]
-        return self._buffs(enchantments)
+        return self._buff_details(enchantments)
 
     def _counters(self, game: GameState) -> list[str]:
         local = self.local_player_id(game)
@@ -830,7 +860,7 @@ class BattlegroundsTracker(GameListener):
         s.opponents = opponents
         if s.phase != "combat":
             s.my_board = self._board(game, self.local_player_id(game))
-        s.player_buffs = self._player_buffs(game, player, hero)
+        s.player_buffs, s.player_buff_texts = self._player_buffs(game, player, hero)
         s.counters = self._counters(game)
         s.tribes_seen = sorted(self._tribes_seen)
         s.anomaly, s.anomaly_text = self._anomaly(game)

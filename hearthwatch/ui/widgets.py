@@ -164,6 +164,15 @@ def card_art(card_id: str, size: int, round_: bool = False) -> Gtk.Widget | None
     return frame
 
 
+# art sizes of minion cards (normal, compact); smaller in a narrow window so a
+# full board of 7 always fits one row - set by the main view's layout
+_board_art = {"normal": 56, "compact": 40}
+
+
+def set_board_art(wide: bool) -> None:
+    _board_art.update(normal=56 if wide else 40, compact=40 if wide else 30)
+
+
 def chip_box() -> Gtk.Widget:
     """Container that wraps chips like text (Adw.WrapBox, libadwaita >= 1.7),
     falling back to a FlowBox. Fill it with ``append``, empty it with ``clear``."""
@@ -230,10 +239,10 @@ class MinionChip(Gtk.Box):
             self.add_css_class("compact")
         if m.golden:
             self.add_css_class("golden")
-        art = card_art(m.card_id, 30 if compact else 44)
+        art = card_art(m.card_id, _board_art["compact" if compact else "normal"])
         if art is not None:
             self.append(art)
-        stats = Gtk.Box(spacing=4, halign=Gtk.Align.CENTER)
+        stats = Gtk.Box(spacing=2, halign=Gtk.Align.CENTER)
         atk = Gtk.Label(label=str(m.attack))
         atk.add_css_class("minion-atk")
         hp = Gtk.Label(label=str(m.health))
@@ -243,9 +252,11 @@ class MinionChip(Gtk.Box):
         for w in (atk, sep, hp):
             stats.append(w)
         self.append(stats)
+        # the full name on up to two lines (ellipsized only if it is longer still)
         name = Gtk.Label(label=("★ " if m.golden else "") + (m.name or m.card_id),
-                         ellipsize=Pango.EllipsizeMode.END, max_width_chars=8 if compact else 11,
-                         width_chars=5)
+                         wrap=True, wrap_mode=Pango.WrapMode.WORD_CHAR, lines=2,
+                         ellipsize=Pango.EllipsizeMode.END, justify=Gtk.Justification.CENTER,
+                         max_width_chars=9 if compact else 12, width_chars=3)
         name.add_css_class("minion-name")
         self.append(name)
         kws = " · ".join(_(KEYWORD_SHORT.get(k, k)) for k in m.keywords())
@@ -260,11 +271,10 @@ class MinionChip(Gtk.Box):
             buff = Gtk.Label(label=f"✦ {count}" if compact else "✦ " + text.format(count=count))
             buff.add_css_class("minion-buff")
             self.append(buff)
-        self.set_tooltip_text(
-            f"{m.name or m.card_id}  {m.attack}/{m.health}"
-            + (f"\n{', '.join(_(k) for k in m.keywords())}" if m.keywords() else "")
-            + ("\nBuffs:\n• " + "\n• ".join(buffs) if buffs else "")
-        )
+        self.set_tooltip_text(m.tooltip())
+
+
+BOARD_SLOTS = 7
 
 
 def board_flow(minions: list[Minion], empty_text: str = "",
@@ -276,14 +286,14 @@ def board_flow(minions: list[Minion], empty_text: str = "",
         label.add_css_class("dim-label")
         label.add_css_class("caption")
         return label
-    flow = Gtk.FlowBox(
-        selection_mode=Gtk.SelectionMode.NONE, homogeneous=True,
-        min_children_per_line=4 if compact else 3, max_children_per_line=7,
-        column_spacing=4, row_spacing=4, valign=Gtk.Align.START,
-    )
+    # 7 equal slots (a board holds at most 7 minions): always one row, and every
+    # board lines up with the others; cards shrink in narrow windows
+    row = Gtk.Box(spacing=4, homogeneous=True, valign=Gtk.Align.START)
     for m in minions:
-        flow.append(MinionChip(m, compact))
-    return flow
+        row.append(MinionChip(m, compact))
+    for _i in range(BOARD_SLOTS - len(minions)):
+        row.append(Gtk.Box())
+    return row
 
 
 class HealthBar(Gtk.Widget):

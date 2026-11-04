@@ -24,6 +24,8 @@ class Minion:
     tribes: tuple[str, ...] = ()
     tech_level: int = 1
     buffs: list[str] = field(default_factory=list)  # enchantments on the minion, e.g. "Mrglmrgl! ×2"
+    buff_texts: list[str] = field(default_factory=list)  # what each buff does (same order as buffs)
+    text: str = ""  # card text, plain, with this minion's values
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -36,6 +38,20 @@ class Minion:
         d["tribes"] = tuple(d.get("tribes") or ())
         known = {f for f in cls.__dataclass_fields__}
         return cls(**{k: v for k, v in d.items() if k in known})
+
+    def tooltip(self) -> str:
+        """Everything about this minion for a hover tooltip: stats, keywords, text, buffs."""
+        lines = [f"{self.name or self.card_id}  {self.attack}/{self.health}"]
+        if self.keywords():
+            lines.append(", ".join(_(k) for k in self.keywords()))
+        if self.text:
+            lines.append(self.text)
+        if self.buffs:
+            lines.append(_("Buffs:"))
+            texts = self.buff_texts if len(self.buff_texts) == len(self.buffs) else [""] * len(self.buffs)
+            for name, text in zip(self.buffs, texts):
+                lines.append(f"• {name}" + (f": {text}" if text else ""))
+        return "\n".join(lines)
 
     def keywords(self) -> list[str]:
         """English keyword names (translate with ``_()`` for display)."""
@@ -159,6 +175,7 @@ class LiveState:
     notice: str = ""  # e.g. why the last game could not be followed to its end
     max_health: int = 0
     my_board: list[Minion] = field(default_factory=list)  # your board right now (recruit phase)
+    player_buff_texts: list[str] = field(default_factory=list)  # what each player buff does
     player_buffs: list[str] = field(default_factory=list)  # game-wide buffs, e.g. "Blood Gems +2/+1"
     counters: list[str] = field(default_factory=list)  # e.g. "Gold next turn +2"
 

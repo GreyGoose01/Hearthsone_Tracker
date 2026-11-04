@@ -280,6 +280,23 @@ def test_live_board_buffs_and_counters(bg_log, cards):
     assert s.counters == ["Gold nächste Runde +2"]
 
 
+def test_hover_texts_show_card_and_buff_effects(bg_log, cards):
+    _, _, states, _, _ = run(bg_log, cards)
+    s = [s for s in states if s.in_game and s.round == 2 and s.phase == "recruit"][-1]
+    m = s.my_board[0]
+    assert m.text == "Spott"
+    assert m.buff_texts == ["+2/+2."]  # {0}/{1} filled from the enchantment
+    assert m.tooltip().splitlines() == ["Wildschwein  3/3", "Spott", "Buffs:", "• Teufelsstärke (2/2): +2/+2."]
+    assert s.player_buff_texts == ["Eure Blutedelsteine geben zusätzlich +2/+1."]
+
+
+def test_old_saved_minions_without_texts_still_load():
+    from hearthwatch.bg.models import Minion
+
+    m = Minion.from_dict({"card_id": "X", "attack": 1, "health": 2, "name": "Alt", "buffs": ["B ×2"]})
+    assert m.tooltip() == "Alt  1/2\nBuffs:\n• B ×2"
+
+
 def test_lobby_details(bg_log, cards):
     _, _, states, _, _ = run(bg_log, cards)
     s = [s for s in states if s.in_game and s.round == 2][-1]
@@ -319,3 +336,17 @@ def test_lobby_types_come_from_single_type_pool_minions(pool_cards):
         t._note_tribes(Entity(1, cid, {"CARDRACE": "BEAST"}))
     # dual type (Beast/Undead) and the token (not in the pool) teach nothing
     assert t._tribes_seen == {"BEAST", "NAGA"}
+
+
+def test_internal_helper_enchantments_are_hidden_or_renamed(cards):
+    from hearthwatch.cards import CardDB
+    from hearthwatch.power.entities import Entity
+
+    db = CardDB([
+        {"id": "E_POET", "name": "Persistent Poet Player Enchant [DNT]", "type": "ENCHANTMENT",
+         "text": "Adjacent minions keep your enchantments."},
+        {"id": "E_TECH", "name": "TagTransferPlayerEnchant [DNT]", "type": "ENCHANTMENT"},
+    ])
+    t = BattlegroundsTracker(db, lambda s: None, lambda c: None, lambda r: None)
+    names, texts = t._buff_details([Entity(1, "E_POET"), Entity(2, "E_TECH")])
+    assert names == ["Persistent Poet"] and texts == ["Adjacent minions keep your enchantments."]

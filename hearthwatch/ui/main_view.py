@@ -23,6 +23,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, GLib, Gtk, Pango  # noqa: E402
 
 from hearthwatch.bg.models import CombatSnapshot, LiveState, OpponentInfo
+from hearthwatch.bg.tracker import TRIBES_PER_LOBBY
 from hearthwatch.cards import tribe_name
 from hearthwatch.i18n import N_, _
 from hearthwatch.settings import Settings
@@ -37,6 +38,7 @@ from hearthwatch.ui.widgets import (
     clear,
     pill,
     result_dot,
+    set_board_art,
     stat_tile,
 )
 
@@ -86,6 +88,7 @@ class MainView(Gtk.Stack):
     def __init__(self) -> None:
         super().__init__(transition_type=Gtk.StackTransitionType.CROSSFADE)
         self.add_css_class("hearthwatch-root")
+        set_board_art(False)  # narrow until the window's breakpoint says otherwise
         self.settings = Settings()
         self.waiting = Adw.StatusPage(
             title=_("Waiting for a Battlegrounds game"),
@@ -133,8 +136,17 @@ class MainView(Gtk.Stack):
 
     # -- settings / layout ------------------------------------------------------
     def set_wide(self, wide: bool) -> None:
+        set_board_art(wide)
+        self._signatures.clear()  # rebuild the boards with the new card size
+        if self._state is not None and self._in_game:
+            GLib.idle_add(lambda: (self.update_state(self._state), False)[1])
         self.columns.set_orientation(Gtk.Orientation.HORIZONTAL if wide else Gtk.Orientation.VERTICAL)
         self.columns.set_homogeneous(wide)
+
+    @property
+    def in_game(self) -> bool:
+        """A Battlegrounds game is being followed right now."""
+        return self._in_game
 
     def keep_predictions(self, other: "MainView") -> None:
         """Take over the simulated odds of a previous view (window rebuilt)."""
@@ -176,7 +188,8 @@ class MainView(Gtk.Stack):
 
         self.dots = chip_box()
         body.append(self.dots)
-        self.tribes = chip_box()
+        # minion types: two full-width rows of equal cells (in the lobby / banned)
+        self.tribes = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         body.append(self.tribes)
         self.left.append(outer)
 
@@ -342,12 +355,32 @@ class MainView(Gtk.Stack):
             if s.anomaly:
                 chip = pill("✦ " + _("Anomaly: {name}").format(name=s.anomaly), "tribe-chip", "anomaly")
                 chip.set_tooltip_text(s.anomaly_text or s.anomaly)
+                chip.set_ellipsize(Pango.EllipsizeMode.END)
                 self.tribes.append(chip)
-            for t in s.tribes_seen:
-                self.tribes.append(pill(tribe_label(t), "tribe-chip"))
-            for t in s.tribes_banned:
-                self.tribes.append(pill("✕ " + tribe_label(t), "tribe-chip", "banned"))
+            if self.settings.show_tribes and (s.tribes_seen or s.tribes_banned):
+                self.tribes.append(self._tribe_cells([tribe_label(t) for t in s.tribes_seen]))
+                if s.tribes_banned:
+                    out = Gtk.Label(label=_("Not in this lobby: {types}").format(
+                        types=" · ".join(tribe_label(t) for t in s.tribes_banned)), wrap=True,
+                        justify=Gtk.Justification.CENTER)
+                    out.add_css_class("caption")
+                    out.add_css_class("dim-label")
+                    self.tribes.append(out)
         self.tribes.set_visible(bool(s.anomaly) or (self.settings.show_tribes and bool(s.tribes_seen or s.tribes_banned)))
+
+    @staticmethod
+    def _tribe_cells(names: list[str]) -> Gtk.Widget:
+        """The lobby's minion types as equally wide cells (5 in a row, or 3 + 2 when
+        narrow); types not seen yet as "?"."""
+        flow = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, homogeneous=True,
+                           min_children_per_line=3, max_children_per_line=TRIBES_PER_LOBBY,
+                           column_spacing=4, row_spacing=4)
+        for i in range(max(TRIBES_PER_LOBBY, len(names))):
+            known = i < len(names)
+            chip = pill(names[i] if known else "?", "tribe-chip", *([] if known else ["banned"]))
+            chip.set_tooltip_text(_("In this lobby") if known else _("not seen yet"))
+            flow.append(chip)
+        return flow
 
     def _update_focus(self, s: LiveState) -> None:
         last = s.last_combat
@@ -500,8 +533,12 @@ class MainView(Gtk.Stack):
             clear(self.buff_chips)
             for text in s.counters:
                 self.buff_chips.append(pill(text, "chip", "counter"))
-            for text in s.player_buffs:
-                self.buff_chips.append(pill(text, "chip"))
+            texts = s.player_buff_texts if len(s.player_buff_texts) == len(s.player_buffs) else []
+            for i, text in enumerate(s.player_buffs):
+                chip = pill(text, "chip")
+                if texts and texts[i]:
+                    chip.set_tooltip_text(texts[i])
+                self.buff_chips.append(chip)
             if not (s.counters or s.player_buffs):
                 self.buff_chips.append(pill(_("no game-wide buffs yet"), "tribe-chip", "banned"))
         # your board as of the recruit phase (kept during combat)

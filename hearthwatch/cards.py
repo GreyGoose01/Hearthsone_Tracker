@@ -53,17 +53,44 @@ def tribe_name(tribe: str) -> str:
 
 
 _TAG_RE = re.compile(r"</?[a-zA-Z][^>]*>")
+_INTERNAL_RE = re.compile(r"\s*[\[(]DNT[\])]\s*")
+_ENCHANT_SUFFIX_RE = re.compile(r"\s+Player\s+Ench(ant(ment)?)?\b.*$|\s+Ench(ant(ment)?)?$", re.I)
 
 
-def card_text(text: str) -> str:
-    """Card text as plain text: no markup, no layout markers, one line."""
+def is_internal_name(name: str) -> bool:
+    """Blizzard's internal helper cards are marked "[DNT]" (do not translate)."""
+    return bool(_INTERNAL_RE.search(name or ""))
+
+
+def buff_name(name: str) -> str:
+    """Readable name of an enchantment: without "[DNT]" and "Player Enchant" parts.
+
+    "Persistent Poet Player Enchant [DNT]" -> "Persistent Poet",
+    "Spielerverzauberung: Blutedelstein" -> "Blutedelstein".
+    """
+    text = _INTERNAL_RE.sub(" ", name or "").strip()
+    text = re.sub(r"^Spielerverzauberung:\s*", "", text)
+    text = text.replace("_", " ")
+    return _ENCHANT_SUFFIX_RE.sub("", text).strip() or (name or "").strip()
+
+
+def card_text(text: str, values: tuple[int, ...] | list[int] = ()) -> str:
+    """Card text as plain text: no markup, no layout markers, one line.
+
+    ``values`` fill the game's ``{0}``, ``{1}`` ... (TAG_SCRIPT_DATA_NUM_1, _2 ...);
+    without them the numbers show as "X".
+    """
     if not text:
         return ""
     text = text.split("@", 1)[0]  # "@" starts an alternative text the game swaps in
     text = _TAG_RE.sub("", text).replace("[x]", "")
     text = re.sub(r"\[[a-z]\]", "", text)  # grammar markers, e.g. "Gasthaus[d]zauber"
     text = re.sub(r"\|4\(([^,()]*),\s*([^()]*)\)", r"\2", text)  # "|4(Zug, Züge)" -> plural
-    text = re.sub(r"\{\d+\}", "X", text)  # values the game fills in during a match
+    def value(m: re.Match) -> str:
+        i = int(m.group(1))
+        return str(values[i]) if i < len(values) else "X"
+
+    text = re.sub(r"\{(\d+)\}", value, text)  # values the game fills in during a match
     text = re.sub(r"[$#](\d)", r"\1", text)  # $3 / #3: spell damage / healing markers
     text = text.replace("_", " ").replace("\n", " ")
     text = re.sub(r"\s+", " ", text).strip()
@@ -103,10 +130,12 @@ class CardInfo:
 
 
 class CardDB:
-    def __init__(self, cards: list[dict] | None = None, en_names: dict[str, str] | None = None) -> None:
+    def __init__(self, cards: list[dict] | None = None, en_names: dict[str, str] | None = None,
+                 en_texts: dict[str, str] | None = None) -> None:
         self._by_id: dict[str, CardInfo] = {}
         self._by_dbf: dict[int, CardInfo] = {}
         self._en: dict[str, str] = dict(en_names or {})
+        self._en_text: dict[str, str] = dict(en_texts or {})
         if cards:
             self._load(cards)
             if en_names is None:
@@ -156,6 +185,11 @@ class CardDB:
         """English name - the simulator's effect registry is keyed by it."""
         return self._en.get(card_id) or self._en.get(hero_base_id(card_id)) or self.name(card_id)
 
+    def text(self, card_id: str) -> str:
+        """Card text in this language; the English one if it has none here."""
+        info = self.get(card_id)
+        return (info.text if info else "") or self._en_text.get(card_id, "")
+
     def races(self, card_id: str) -> tuple[str, ...]:
         info = self.get(card_id)
         return info.races if info else ()
@@ -169,11 +203,13 @@ class CardDB:
     def from_file(cls, path: Path, en_path: Path | None = None) -> "CardDB":
         with path.open(encoding="utf-8") as fh:
             cards = json.load(fh)
-        en_names = None
+        en_names = en_texts = None
         if en_path is not None and en_path != path and en_path.exists():
             with en_path.open(encoding="utf-8") as fh:
-                en_names = {c["id"]: c.get("name", c["id"]) for c in json.load(fh) if "id" in c}
-        return cls(cards, en_names)
+                en_cards = [c for c in json.load(fh) if "id" in c]
+            en_names = {c["id"]: c.get("name", c["id"]) for c in en_cards}
+            en_texts = {c["id"]: c["text"] for c in en_cards if c.get("text")}
+        return cls(cards, en_names, en_texts)
 
     @staticmethod
     def cache_file(cache_dir: Path, locale: str) -> Path:
