@@ -112,7 +112,8 @@ class MainView(Gtk.Stack):
         # wide enough to use big screens; the content itself grows with the window
         clamp = Adw.Clamp(maximum_size=2600, tightening_threshold=2200, child=self.columns,
                           margin_top=10, margin_bottom=14, margin_start=10, margin_end=10)
-        self.add_named(Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER, child=clamp), "game")
+        # a horizontal scrollbar only as a last resort: never cut the content off
+        self.add_named(Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.AUTOMATIC, child=clamp), "game")
 
         self._build_header()
         self.lethal = Gtk.Label(xalign=0, wrap=True, visible=False)
@@ -125,7 +126,7 @@ class MainView(Gtk.Stack):
         self.summary_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         summary_clamp = Adw.Clamp(maximum_size=1500, tightening_threshold=1100, child=self.summary_box,
                                   margin_top=12, margin_bottom=18, margin_start=12, margin_end=12)
-        self.add_named(Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER,
+        self.add_named(Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.AUTOMATIC,
                                           child=summary_clamp), "summary")
 
         self._state: LiveState | None = None
@@ -137,11 +138,15 @@ class MainView(Gtk.Stack):
         self._notice = ""
         self._wide = False
         self._scale = 1.0
+        self._target: float | None = None  # scale wanted for the window width
+        self._width = 0
+        self._fit_pending = False
         self.show_waiting()
 
     # -- settings / layout ------------------------------------------------------
     def set_wide(self, wide: bool) -> None:
         self._wide = wide
+        self._target = None  # pick the scale for the new layout
         set_board_art(wide)
         GLib.idle_add(lambda: (self._rebuild(), False)[1])  # boards with the new card size
         self.columns.set_orientation(Gtk.Orientation.HORIZONTAL if wide else Gtk.Orientation.VERTICAL)
@@ -149,14 +154,41 @@ class MainView(Gtk.Stack):
 
     def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
         Gtk.Stack.do_size_allocate(self, width, height, baseline)
-        factor = scale_for_width(width, self._wide) if self.settings.scale_with_window else 1.0
-        if factor != self._scale:
-            self._scale = factor
+        self._width = width
+        target = scale_for_width(width, self._wide) if self.settings.scale_with_window else 1.0
+        if target != self._target or (self._scale > 1.0 and not self._fits()):
+            self._target = target
+            self._schedule_scale()
+
+    def _schedule_scale(self) -> None:
+        if not self._fit_pending:
+            self._fit_pending = True
             GLib.idle_add(self._apply_scale)  # never change widgets while they are laid out
 
+    def _fits(self) -> bool:
+        """Does the page fit the window at the current scale?"""
+        page = self.get_visible_child_name()
+        if page == "game":
+            need = self.columns.measure(Gtk.Orientation.HORIZONTAL, -1)[0] + 20
+        elif page == "summary":
+            need = self.summary_box.measure(Gtk.Orientation.HORIZONTAL, -1)[0] + 24
+        else:
+            return True
+        return need <= self._width
+
     def _apply_scale(self) -> bool:
-        set_ui_scale(self._scale)
-        self._rebuild()
+        """Grow to the scale the window width asks for, but only as far as everything still fits
+        (fonts and themes differ: measure instead of guessing)."""
+        self._fit_pending = False
+        scale = self._target or 1.0
+        while True:
+            if scale != self._scale:
+                self._scale = scale
+                set_ui_scale(scale)
+                self._rebuild()
+            if scale <= 1.0 or self._fits():
+                break
+            scale = round(scale - 0.1, 1)
         return False
 
     def _rebuild(self) -> None:
@@ -188,6 +220,7 @@ class MainView(Gtk.Stack):
         if not settings.scale_with_window and self._scale != 1.0:
             self._scale = 1.0
             set_ui_scale(1.0)
+        self._target = None
         self.queue_allocate()
         self._rebuild()  # everything with the new options
 

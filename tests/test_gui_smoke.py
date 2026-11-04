@@ -109,3 +109,40 @@ def test_all_windows_build(bg_log, cards, pool_cards, tmp_path, language):
     while ctx.pending():
         ctx.iteration(False)
     win.destroy()
+
+
+def test_minion_popup_and_fitting(bg_log, cards):
+    Gtk, _GLib = _gtk()
+    from hearthwatch.bg.models import Minion
+    from hearthwatch.ui import widgets
+    from hearthwatch.ui.main_view import MainView
+
+    widgets.install_css()
+    m = Minion("BG_X", 12, 13, name="Volumizer", golden=True, taunt=True, tribes=("MECHANICAL",),
+               text="Magnetic.", buffs=["Well Repaired (4/8)", "Volumized (5/2)"],
+               buff_texts=["+4/+8.", ""])
+    tip = widgets.minion_tooltip(m)
+    texts = []
+    child = tip
+    stack = [child]
+    while stack:  # every label in the popup
+        w = stack.pop()
+        if isinstance(w, Gtk.Label):
+            texts.append(w.get_label())
+        c = w.get_first_child()
+        while c is not None:
+            stack.append(c)
+            c = c.get_next_sibling()
+    assert "★ Volumizer" in texts and "✦ Well Repaired (4/8)" in texts and "+4/+8." in texts
+
+    # a view that is much too narrow for the wanted scale steps down until it fits (or to 1.0)
+    states = []
+    tracker = BattlegroundsTracker(cards, states.append)
+    game = GameState([tracker])
+    game.feed_lines(bg_log.read_text().splitlines())
+    view = MainView()
+    view.update_state(next(s for s in reversed(states) if s.in_game))
+    view._width, view._target = 300, 1.6
+    view._apply_scale()
+    assert view._scale == 1.0
+    widgets.set_ui_scale(1.0)

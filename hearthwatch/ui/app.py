@@ -77,7 +77,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         # wide window: lobby in a second column
         if hasattr(Adw, "Breakpoint"):  # libadwaita >= 1.4
-            bp = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("min-width: 860sp"))
+            bp = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("min-width: 960sp"))
             bp.connect("apply", lambda *_: self.live.set_wide(True))
             bp.connect("unapply", lambda *_: self.live.set_wide(False))
             self.add_breakpoint(bp)

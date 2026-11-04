@@ -838,7 +838,6 @@ class BattlegroundsTracker(GameListener):
             main = _latest(placed, "PLAYER_LEADERBOARD_PLACE")
             health_e = _latest(ents, "HEALTH", "DAMAGE")
             armor_e = _latest(ents, "ARMOR")
-            tier_e = _latest(ents, "PLAYER_TECH_LEVEL")
             last_board = self._boards.get(key)
             info = OpponentInfo(
                 hero_card_id=hero_base_id(main.card_id),
@@ -848,7 +847,8 @@ class BattlegroundsTracker(GameListener):
                 place=main.int_tag("PLAYER_LEADERBOARD_PLACE") if s.round else 0,
                 health=health_e.health,
                 armor=armor_e.int_tag("ARMOR"),
-                tavern_tier=tier_e.int_tag("PLAYER_TECH_LEVEL"),
+                # the tier only goes up; combat copies of a hero may lack it
+                tavern_tier=max(e.int_tag("PLAYER_TECH_LEVEL") for e in ents),
                 is_me=key == my_key,
                 last_board=last_board,
                 max_health=health_e.int_tag("HEALTH"),

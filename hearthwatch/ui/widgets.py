@@ -36,11 +36,18 @@ CSS = """
 .minion { background: alpha(currentColor, 0.06); border-radius: 10px; padding: 5px 6px;
           border: 1px solid transparent; }
 .minion.golden { border-color: #e5a50a; background: alpha(#e5a50a, 0.10); }
+.minion:hover { border-color: alpha(@accent_color, 0.55); }
 .minion-atk { font-weight: 800; font-size: 1.15em; color: #e5a50a; }
 .minion-hp { font-weight: 800; font-size: 1.15em; color: @error_color; }
 .minion-name { font-size: 0.78em; }
 .minion-kw { font-size: 0.7em; opacity: 0.7; }
 .minion-buff { font-size: 0.7em; font-weight: 700; color: @accent_color; }
+.minion-tip { padding: 4px; }
+.minion-tip .tip-name { font-weight: 800; font-size: 1.1em; }
+.minion-tip .tip-text { font-size: 0.95em; }
+.minion-tip .tip-caption { font-size: 0.8em; font-weight: 700; opacity: 0.7; }
+.minion-tip .tip-buff-name { font-weight: 700; }
+.minion-tip .tip-buff-text { font-size: 0.9em; opacity: 0.85; }
 .place-badge { min-width: 28px; min-height: 28px; border-radius: 999px; font-weight: 800;
                background: alpha(currentColor, 0.08); }
 .place-badge.top { background: alpha(@success_bg_color, 0.22); color: @success_color; }
@@ -330,7 +337,64 @@ class MinionChip(Gtk.Box):
             buff = Gtk.Label(label=f"✦ {count}" if compact else "✦ " + text.format(count=count))
             buff.add_css_class("minion-buff")
             self.append(buff)
-        self.set_tooltip_text(m.tooltip())
+        # a card-like popup with art, text and buffs; built only when first shown
+        self._minion = m
+        self._tip: Gtk.Widget | None = None
+        self.set_has_tooltip(True)
+        self.connect("query-tooltip", self._on_query_tooltip)
+
+    def _on_query_tooltip(self, _w, _x, _y, _keyboard, tooltip: Gtk.Tooltip) -> bool:
+        if self._tip is None:
+            self._tip = minion_tooltip(self._minion)
+        tooltip.set_custom(self._tip)
+        return True
+
+
+def minion_tooltip(m: Minion) -> Gtk.Widget:
+    """Hover popup for a minion: art, name, stats, keywords, card text and every buff."""
+    box = Gtk.Box(spacing=12)
+    box.add_css_class("minion-tip")
+    art = card_art(m.card_id, 96)
+    if art is not None:
+        art.set_valign(Gtk.Align.START)
+        box.append(art)
+    info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+    box.append(info)
+
+    def label(text: str, css: str, **kw) -> Gtk.Label:
+        lab = Gtk.Label(label=text, xalign=0, wrap=True, max_width_chars=42, **kw)
+        lab.add_css_class(css)
+        info.append(lab)
+        return lab
+
+    head = Gtk.Box(spacing=8)
+    name = Gtk.Label(label=("★ " if m.golden else "") + (m.name or m.card_id), xalign=0, wrap=True,
+                     max_width_chars=30, hexpand=True)
+    name.add_css_class("tip-name")
+    head.append(name)
+    stats = Gtk.Box(spacing=2, valign=Gtk.Align.CENTER)
+    for text, css in ((str(m.attack), "minion-atk"), ("/", "dim-label"), (str(m.health), "minion-hp")):
+        part = Gtk.Label(label=text)
+        part.add_css_class(css)
+        stats.append(part)
+    head.append(stats)
+    info.append(head)
+    meta = [tribe_name(t) for t in m.tribes]
+    meta += [_(k) for k in m.keywords()]
+    if meta:
+        label(" · ".join(meta), "tip-caption")
+    if m.text:
+        label(m.text, "tip-text")
+    if m.buffs:
+        info.append(Gtk.Separator(margin_top=4, margin_bottom=2))
+        label(_("Buffs:").rstrip(":"), "tip-caption")
+        texts = m.buff_texts if len(m.buff_texts) == len(m.buffs) else [""] * len(m.buffs)
+        for buff, text in zip(m.buffs, texts):
+            label("✦ " + buff, "tip-buff-name")
+            if text:
+                lab = label(text, "tip-buff-text")
+                lab.set_margin_start(14)
+    return box
 
 
 BOARD_SLOTS = 7
