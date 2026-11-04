@@ -44,6 +44,8 @@ class SettingsDialog(_Base):
         scale.set_value(settings.font_scale)
         scale.connect("notify::value", lambda r, _p: self._set("font_scale", int(r.get_value())))
         view.add(scale)
+        view.add(self._switch(_("Grow with the window"), _("Bigger pictures and text in a big window"),
+                              "scale_with_window"))
         page.add(view)
 
         sections = Adw.PreferencesGroup(title=_("Sections"), description=_("What the live view shows"))

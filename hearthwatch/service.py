@@ -143,6 +143,14 @@ class TrackerService:
             self.tracker.cards = cards
             self.tracker.relabel()
             self.tracker.batch_done(self.game)
+        if len(cards):
+            try:
+                fixed = self.db.fix_names(cards.name)
+            except Exception:  # the history is not worth crashing for
+                log.exception("could not fix stored names")
+            else:
+                if fixed:
+                    log.info("filled in names of %d stored games", fixed)
 
     # -- watcher callbacks (watcher thread) -------------------------------------
     def _new_file(self, path: Path) -> None:

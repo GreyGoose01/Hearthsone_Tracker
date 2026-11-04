@@ -140,6 +140,11 @@ class BattlegroundsTracker(GameListener):
                 fix(combat.opponent)
         if self.state.hero_card_id:
             self.state.hero_name = self._card_name(self.state.hero_card_id)
+        summary = self.state.summary  # the end-of-game view of a game read before card data came
+        if summary is not None:
+            if summary.hero_card_id:
+                summary.hero_name = self._card_name(summary.hero_card_id)
+            fix(BoardSnapshot(0, "", "", 0, summary.final_board))
         for o in self.state.opponents:
             o.hero_name = self._card_name(o.hero_card_id)
         self._dirty = True

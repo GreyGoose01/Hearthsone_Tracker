@@ -6,7 +6,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gdk, GLib, Gtk, Pango  # noqa: E402
+from gi.repository import Adw, Gdk, GdkPixbuf, GLib, Gtk, Pango  # noqa: E402
 
 from hearthwatch.bg.models import Minion  # noqa: E402
 from hearthwatch.cards import tribe_name  # noqa: E402
@@ -62,7 +62,7 @@ CSS = """
 .summary-place.bottom { background: alpha(@error_bg_color, 0.16); color: @error_color; }
 
 /* --- v2: art, bars, compact rows ---------------------------------------- */
-.art { border-radius: 10px; background: alpha(currentColor, 0.10); }
+.art { border-radius: 10px; }
 .art.round { border-radius: 999px; }
 .minion.compact { padding: 3px 4px; }
 .minion.compact .minion-atk, .minion.compact .minion-hp { font-size: 1.0em; }
@@ -115,8 +115,11 @@ _scale_provider: Gtk.CssProvider | None = None
 
 
 def set_font_scale(percent: int) -> None:
-    """Scale all text of the tracker (``.hearthwatch-root``) - settings font size."""
-    global _scale_provider
+    """Scale all text of the tracker (``.hearthwatch-root``) - settings font size,
+    times the window scale."""
+    global _scale_provider, _user_font
+    _user_font = percent
+    percent = percent * _ui_scale
     display = Gdk.Display.get_default()
     if display is None:
         return
@@ -125,7 +128,10 @@ def set_font_scale(percent: int) -> None:
         Gtk.StyleContext.add_provider_for_display(
             display, _scale_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1
         )
-    css = f".hearthwatch-root {{ font-size: {percent / 100:.2f}em; }}"
+    # libadwaita gives headings and captions fixed sizes: make them relative so they grow too
+    css = (f".hearthwatch-root {{ font-size: {percent / 100:.2f}em; }}"
+           ".hearthwatch-root .heading { font-size: 1.0em; }"
+           ".hearthwatch-root .caption { font-size: 0.85em; }")
     if hasattr(_scale_provider, "load_from_string"):
         _scale_provider.load_from_string(css)
     else:
@@ -146,6 +152,7 @@ def card_art(card_id: str, size: int, round_: bool = False) -> Gtk.Widget | None
     None if images are disabled. Fixed size, so layouts do not jump."""
     if _art is None or not getattr(_art, "enabled", False) or not card_id:
         return None
+    size = scaled(size)
     image = Gtk.Image(pixel_size=size)
     frame = Gtk.Box(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, hexpand=False, vexpand=False)
     frame.set_size_request(size, size)
@@ -156,12 +163,35 @@ def card_art(card_id: str, size: int, round_: bool = False) -> Gtk.Widget | None
     frame.append(image)
 
     def show(path) -> None:
-        GLib.idle_add(lambda: (image.set_from_file(str(path)), False)[1])
+        GLib.idle_add(lambda: (_set_art(image, path), False)[1])
 
     hit = _art.request(card_id, show)
     if hit is not None:
-        image.set_from_file(str(hit))
+        _set_art(image, hit)
     return frame
+
+
+# the art images have a light rim; cut this share off every side before showing them
+ART_CROP = 0.07
+_textures: dict[str, Gdk.Texture] = {}
+
+
+def _set_art(image: Gtk.Image, path) -> None:
+    key = str(path)
+    texture = _textures.get(key)
+    if texture is None:
+        try:
+            pix = GdkPixbuf.Pixbuf.new_from_file(key)
+            cut_w, cut_h = int(pix.get_width() * ART_CROP), int(pix.get_height() * ART_CROP)
+            pix = pix.new_subpixbuf(cut_w, cut_h, pix.get_width() - 2 * cut_w, pix.get_height() - 2 * cut_h)
+            texture = Gdk.Texture.new_for_pixbuf(pix)
+        except GLib.Error:
+            image.set_from_file(key)  # unreadable image: let GTK show what it can
+            return
+        if len(_textures) > 400:
+            _textures.clear()
+        _textures[key] = texture
+    image.set_from_paintable(texture)
 
 
 # art sizes of minion cards (normal, compact); smaller in a narrow window so a
@@ -170,7 +200,35 @@ _board_art = {"normal": 56, "compact": 40}
 
 
 def set_board_art(wide: bool) -> None:
-    _board_art.update(normal=56 if wide else 40, compact=40 if wide else 30)
+    _board_art.update(normal=64 if wide else 44, compact=40 if wide else 30)
+
+
+# everything grows with the window: art sizes and text are multiplied by this
+_ui_scale = 1.0
+_user_font = 100
+
+
+def scaled(px: int) -> int:
+    return int(round(px * _ui_scale))
+
+
+def ui_scale() -> float:
+    return _ui_scale
+
+
+def set_ui_scale(factor: float) -> None:
+    global _ui_scale
+    _ui_scale = factor
+    set_font_scale(_user_font)
+
+
+def scale_for_width(width: int, wide: bool) -> float:
+    """How much bigger than normal everything may be at this window width: 1.0 up to
+    a comfortable width (about 1100 px wide, 480 px narrow), then growing in 10 %
+    steps, at most 1.6."""
+    base = 1100 if wide else 480
+    factor = max(1.0, min(1.6, width / base))
+    return round(factor * 10) / 10
 
 
 def chip_box() -> Gtk.Widget:

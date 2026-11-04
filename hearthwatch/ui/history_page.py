@@ -33,7 +33,7 @@ class HistoryPage(Gtk.ScrolledWindow):
     def __init__(self, db: MatchDB) -> None:
         super().__init__(hscrollbar_policy=Gtk.PolicyType.NEVER)
         self.db = db
-        clamp = Adw.Clamp(maximum_size=760, margin_top=12, margin_bottom=18,
+        clamp = Adw.Clamp(maximum_size=1300, margin_top=12, margin_bottom=18,
                           margin_start=12, margin_end=12)
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         clamp.set_child(self.box)
