@@ -516,3 +516,14 @@ def test_beetle_stats_from_a_summoner_win_over_the_enchantment(cards):
     from hearthwatch.i18n import _
     assert _("Beetles {attack}/{health}").format(attack=7, health=5) in tracker._counters(game)
     assert tracker._beetle(game, tracker._board_entities(game, 5), set()) == (7, 5)
+
+
+def test_tasty_lobster_improvements_from_its_text_values(cards):
+    tracker, game = _beetle_game(cards, with_vermin=False)
+    from hearthwatch.power.entities import Entity
+
+    lobster = Entity(40, "BG36_202", {"TAG_SCRIPT_DATA_NUM_1": 8, "TAG_SCRIPT_DATA_NUM_2": 4})
+    golden = Entity(41, "BG36_202_G", {"TAG_SCRIPT_DATA_NUM_1": 12, "TAG_SCRIPT_DATA_NUM_2": 6})
+    assert tracker._lobster_bonus([lobster]) == 3  # +8/+4 = level 4: improved three times
+    assert tracker._lobster_bonus([golden]) == 2  # golden gives twice: +12/+6 = level 3
+    assert tracker._lobster_bonus([]) == 0

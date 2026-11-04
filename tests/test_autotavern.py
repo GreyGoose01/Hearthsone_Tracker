@@ -120,8 +120,10 @@ def test_beetle_and_undead_strength_are_set_before_the_minions(fake):
     snap = snapshot([Minion("BG_KNOWN", 1, 1)])
     snap.player.beetle = (6, 4)
     snap.player.undead_attack = 3
+    snap.player.lobster_bonus = 2
     autotavern.simulate_combat(snap, player_health=40)
     cmds = [c["cmd"] for c in fake]
     stats = [c for c in fake if c["cmd"] == "set_stats"]
-    assert stats == [{"cmd": "set_stats", "p": 0, "stats": {"beetle_atk": 4, "beetle_hp": 2, "undead_atk": 3}}]
+    assert stats == [{"cmd": "set_stats", "p": 0, "stats": {"beetle_atk": 4, "beetle_hp": 2, "undead_atk": 3,
+                                                               "lobster_bonus": 2}}]
     assert cmds.index("set_stats") < cmds.index("add_minion")  # the opponent (unknown Beetles) gets none

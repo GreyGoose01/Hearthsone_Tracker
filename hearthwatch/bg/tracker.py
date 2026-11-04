@@ -68,6 +68,7 @@ BLOOD_GEM_TAG = "BACON_BLOODGEMBUFFATKVALUE"
 BEETLE_SUMMONERS = {"BG31_801", "BG31_803", "BG31_808", "BG31_809", "BG36_209"}
 BEETLE_BASE = (2, 2)
 BEETLE_ARMY = "BG31_808pe"
+TASTY_LOBSTER = "BG36_202"  # "Give a random friendly Beast +{0}/+{1}. Improve your future ..."
 UNDEAD_ATTACK = "BG25_011pe"  # "Give Attack to Undead": your Undead have +N Attack this game
 # player enchantments shown as counters instead of buff chips
 COUNTER_ENCHANTMENTS = {BEETLE_ARMY, UNDEAD_ATTACK, "BG26_159pe", "BG31_830pe", "BG32_861pe"}
@@ -575,7 +576,8 @@ class BattlegroundsTracker(GameListener):
 
         my_board = self._board(game, local)
         owners = self._owners(game)
-        my_beetle = self._beetle(game, self._board_entities(game, local), owners)
+        my_entities = self._board_entities(game, local)
+        my_beetle = self._beetle(game, my_entities, owners)
         opp_entities_board = self._opponent_combat_minions(game)
         attachments = self._attachments(game)
         opp_board = [self._minion(e, attachments) for e in opp_entities_board]
@@ -589,6 +591,7 @@ class BattlegroundsTracker(GameListener):
             minions=my_board,
             beetle=my_beetle,
             undead_attack=self._undead_attack(game, owners),
+            lobster_bonus=self._lobster_bonus(my_entities),
         )
         them = BoardSnapshot(
             round=self.state.round,
@@ -597,6 +600,7 @@ class BattlegroundsTracker(GameListener):
             tavern_tier=opp_tier or 1,
             minions=opp_board,
             beetle=self._beetle(game, opp_entities_board, set()),
+            lobster_bonus=self._lobster_bonus(opp_entities_board),
         )
         if opp_key:
             self._boards[opp_key] = them
@@ -817,6 +821,17 @@ class BattlegroundsTracker(GameListener):
             atk, hp = self._script_values(army)
             return BEETLE_BASE[0] + atk, BEETLE_BASE[1] + hp
         return 0, 0
+
+    def _lobster_bonus(self, minions: list[Entity]) -> int:
+        """Improvements of this player's Tasty Lobsters: a Lobster gives +2/+1 per level
+        (twice that when golden), level 1 + the improvements."""
+        for e in minions:
+            if e.card_id.removesuffix("_G") == TASTY_LOBSTER:
+                per_level = 4 if e.card_id.endswith("_G") or e.int_tag("PREMIUM") else 2
+                atk = self._script_values(e)[0]
+                if atk >= per_level:
+                    return atk // per_level - 1
+        return 0
 
     def _undead_attack(self, game: GameState, owners: set[int]) -> int:
         bonus = self._player_enchantment(game, UNDEAD_ATTACK, owners)

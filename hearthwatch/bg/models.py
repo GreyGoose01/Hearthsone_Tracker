@@ -86,6 +86,7 @@ class BoardSnapshot:
     # and the extra Attack of their Undead
     beetle: tuple[int, int] = (0, 0)
     undead_attack: int = 0
+    lobster_bonus: int = 0  # how often their Tasty Lobsters were improved this game
 
     def to_dict(self) -> dict:
         return {
@@ -96,6 +97,7 @@ class BoardSnapshot:
             "minions": [m.to_dict() for m in self.minions],
             "beetle": list(self.beetle),
             "undead_attack": self.undead_attack,
+            "lobster_bonus": self.lobster_bonus,
         }
 
 

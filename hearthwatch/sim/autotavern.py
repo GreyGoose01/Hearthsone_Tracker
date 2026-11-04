@@ -131,6 +131,8 @@ def _setup(game, snapshot: CombatSnapshot) -> None:
             stats.update(beetle_atk=board.beetle[0] - BEETLE_BASE[0], beetle_hp=board.beetle[1] - BEETLE_BASE[1])
         if board.undead_attack:
             stats["undead_atk"] = board.undead_attack
+        if board.lobster_bonus:
+            stats["lobster_bonus"] = board.lobster_bonus
         if stats:
             try:
                 cmd(cmd="set_stats", p=seat, stats=stats)
