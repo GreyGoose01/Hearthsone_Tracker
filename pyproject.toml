@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hearthwatch"
-version = "0.4.0"
+version = "0.4.1"
 description = "Hearthwatch: Battlegrounds tracker for Hearthstone on Linux (hearthstone-linux-gui, GTK4/libadwaita)"
 readme = "README.md"
 license = "MIT"
