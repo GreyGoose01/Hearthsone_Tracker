@@ -64,6 +64,16 @@ def _mtime(path: Path) -> float:
         return 0.0
 
 
+def _other_language(old: CardDB, new: CardDB) -> bool:
+    """Do two card databases name cards differently (one empty, or another language)?"""
+    if not len(new):
+        return False
+    if not len(old):
+        return True
+    sample = [c.id for c in new.bg_minions()[:30]] or ["TB_BaconShopBob"]
+    return any(old.name(cid) != new.name(cid) for cid in sample)
+
+
 class TrackerService:
     """Follows the newest Power.log and reports the game in it as *live* only
     while it belongs to the running Hearthstone session.
@@ -137,12 +147,18 @@ class TrackerService:
         self._executor.shutdown(wait=False, cancel_futures=True)
 
     def set_cards(self, cards: CardDB) -> None:
-        """Use new card data and fix names that were shown as card IDs."""
+        """Use new card data and fix names that were shown as card IDs. Texts and buffs
+        of a game read with other card data (none yet, or another language) are only
+        right after reading the log again."""
         with self._lock:
+            reread = _other_language(self.cards, cards)
             self.cards = cards
             self.tracker.cards = cards
             self.tracker.relabel()
             self.tracker.batch_done(self.game)
+        if reread and self.watcher.current_file is not None:
+            log.info("card data changed language: reading the log again")
+            self.watcher.reread()
         if len(cards):
             try:
                 fixed = self.db.fix_names(cards.name)
