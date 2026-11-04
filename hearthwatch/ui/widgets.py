@@ -49,6 +49,7 @@ CSS = """
 .lobby-row.me { background: alpha(@accent_bg_color, 0.08); border-radius: 10px; }
 .lobby-row.next { background: alpha(@accent_bg_color, 0.14); border-radius: 10px; }
 .lobby-row.dead { opacity: 0.45; }
+.hero-option { padding: 8px 4px; border-radius: 10px; background: alpha(currentColor, 0.05); }
 .tag-pill { border-radius: 999px; padding: 1px 8px; font-size: 0.75em; font-weight: 700;
             background: @accent_bg_color; color: @accent_fg_color; }
 .odds-value { font-size: 1.35em; font-weight: 800; }

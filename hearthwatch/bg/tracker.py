@@ -33,7 +33,9 @@ from hearthwatch.bg.models import (
     Minion,
     OpponentInfo,
 )
-from hearthwatch.cards import BG_TRIBES, CardDB, buff_name, card_text, hero_base_id, is_internal_name
+from hearthwatch.cards import (
+    BG_TRIBES, CardDB, buff_name, card_text, hero_base_id, is_internal_name, is_placeholder_hero,
+)
 from hearthwatch.power.entities import Entity
 from hearthwatch.power.game_state import GameListener, GameState
 from hearthwatch.i18n import N_, _
@@ -820,7 +822,10 @@ class BattlegroundsTracker(GameListener):
         hero = self._hero_of(game, player)
         if player is not None:
             s.tavern_tier = player.int_tag("PLAYER_TECH_LEVEL") or s.tavern_tier
-        if hero is not None and hero.card_id:
+        # until you pick, your hero is a placeholder (Bob) and the offered heroes are in your hand
+        s.choosing_hero = s.round == 0 and (hero is None or is_placeholder_hero(hero.card_id))
+        s.hero_options = self._hero_options(game) if s.choosing_hero else []
+        if hero is not None and hero.card_id and not is_placeholder_hero(hero.card_id):
             s.hero_card_id = hero.card_id
             s.hero_name = self._card_name(hero.card_id)
         lobby = self._lobby(game)
@@ -839,7 +844,8 @@ class BattlegroundsTracker(GameListener):
                 hero_card_id=hero_base_id(main.card_id),
                 hero_name=self._card_name(main.card_id),
                 lobby_player_id=main.int_tag("PLAYER_ID"),
-                place=main.int_tag("PLAYER_LEADERBOARD_PLACE"),
+                # before round 1 every hero is "first": no places yet
+                place=main.int_tag("PLAYER_LEADERBOARD_PLACE") if s.round else 0,
                 health=health_e.health,
                 armor=armor_e.int_tag("ARMOR"),
                 tavern_tier=tier_e.int_tag("PLAYER_TECH_LEVEL"),
@@ -867,10 +873,10 @@ class BattlegroundsTracker(GameListener):
                 if not s.tavern_tier:
                     s.tavern_tier = info.tavern_tier
             opponents.append(info)
-        if my_key is None and hero is not None:
+        if my_key is None and hero is not None and not s.choosing_hero:
             s.health = hero.health
             s.armor = hero.int_tag("ARMOR")
-            s.place = hero.int_tag("PLAYER_LEADERBOARD_PLACE") or s.place
+            s.place = (hero.int_tag("PLAYER_LEADERBOARD_PLACE") if s.round else 0) or s.place
         opponents.sort(key=lambda o: (o.place or 99, o.hero_name))
         s.opponents = opponents
         if s.phase != "combat":
@@ -883,6 +889,15 @@ class BattlegroundsTracker(GameListener):
             s.tribes_banned = sorted(set(BG_TRIBES) - self._tribes_seen)
         else:
             s.tribes_banned = []
+
+    def _hero_options(self, game: GameState) -> list[tuple[str, str]]:
+        """The heroes offered to you, in the order they were dealt."""
+        local = self.local_player_id(game)
+        offered = [e for e in game.entities.values()
+                   if e.is_hero and e.card_id and e.zone == "HAND" and e.controller == local
+                   and not is_placeholder_hero(e.card_id)]
+        offered.sort(key=lambda e: e.id)
+        return [(e.card_id, self._card_name(e.card_id)) for e in offered]
 
     def _pool_known(self) -> bool:
         """Does the card database know the tavern pool? (cached per database)"""

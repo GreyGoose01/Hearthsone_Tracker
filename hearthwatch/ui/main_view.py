@@ -293,7 +293,7 @@ class MainView(Gtk.Stack):
 
     # -- helpers ---------------------------------------------------------------------------
     def _changed(self, key: str, signature) -> bool:
-        if self._signatures.get(key) == signature:
+        if key in self._signatures and self._signatures[key] == signature:
             return False
         self._signatures[key] = signature
         return True
@@ -349,7 +349,7 @@ class MainView(Gtk.Stack):
             art = card_art(s.hero_card_id, 44, round_=True)
             if art is not None:
                 self.hero_art.append(art)
-        self.hero_label.set_text(s.hero_name or "–")
+        self.hero_label.set_text(_("Choosing a hero…") if s.choosing_hero else s.hero_name or "–")
         text, css = PHASES.get(s.phase, ("", ""))
         text = _(text) if text else ""
         for c in ("phase-recruit", "phase-combat"):
@@ -416,6 +416,13 @@ class MainView(Gtk.Stack):
         return flow
 
     def _update_focus(self, s: LiveState) -> None:
+        if s.choosing_hero:
+            self.lethal.set_visible(False)
+            self.last_line.set_visible(False)
+            self.focus.set_visible_child_name("next")
+            if self._changed("next", ("choose", tuple(s.hero_options), self.settings.show_art)):
+                self._build_hero_choice(s.hero_options)
+            return
         last = s.last_combat
         if s.phase == "combat" and last is not None and last.round == s.round:
             if self._combat is None or self._combat.round != last.round:
@@ -452,6 +459,31 @@ class MainView(Gtk.Stack):
             self.last_line.set_visible(True)
         else:
             self.last_line.set_visible(False)
+
+    def _build_hero_choice(self, options: list[tuple[str, str]]) -> None:
+        clear(self.next_box)
+        title = Gtk.Label(label=_("Your heroes to choose from"), xalign=0)
+        title.add_css_class("stat-caption")
+        self.next_box.append(title)
+        if not options:
+            label = Gtk.Label(label=_("not known yet"), xalign=0)
+            label.add_css_class("dim-label")
+            self.next_box.append(label)
+            return
+        row = Gtk.Box(spacing=6, homogeneous=True)
+        for card_id, name in options:
+            cell = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            cell.add_css_class("hero-option")
+            art = card_art(card_id, 64, round_=True)
+            if art is not None:
+                art.set_halign(Gtk.Align.CENTER)
+                cell.append(art)
+            label = Gtk.Label(label=name, wrap=True, justify=Gtk.Justification.CENTER,
+                              max_width_chars=14, lines=2, ellipsize=Pango.EllipsizeMode.END)
+            label.add_css_class("heading")
+            cell.append(label)
+            row.append(cell)
+        self.next_box.append(row)
 
     def _build_next(self, o: OpponentInfo | None) -> None:
         clear(self.next_box)
@@ -562,7 +594,7 @@ class MainView(Gtk.Stack):
 
     # -- your buffs ------------------------------------------------------------------------
     def _update_buffs(self, s: LiveState) -> None:
-        show = self.settings.show_buffs
+        show = self.settings.show_buffs and not s.choosing_hero
         self.buffs_outer.set_visible(show)
         if not show:
             return
