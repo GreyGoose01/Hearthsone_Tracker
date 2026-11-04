@@ -137,7 +137,8 @@ def set_font_scale(percent: int) -> None:
             display, _scale_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1
         )
     # libadwaita gives headings and captions fixed sizes: make them relative so they grow too
-    css = (f".hearthwatch-root {{ font-size: {percent / 100:.2f}em; }}"
+    # the hover popup lives in its own window: it grows the same way
+    css = (f".hearthwatch-root, .minion-tip {{ font-size: {percent / 100:.2f}em; }}"
            ".hearthwatch-root .heading { font-size: 1.0em; }"
            ".hearthwatch-root .caption { font-size: 0.85em; }")
     if hasattr(_scale_provider, "load_from_string"):
