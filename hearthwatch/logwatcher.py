@@ -94,6 +94,7 @@ class LogWatcher(threading.Thread):
         self._stop = threading.Event()
         self._follower: LogFollower | None = None
         self._last_scan = 0.0
+        self._reread = threading.Event()
 
     def stop(self) -> None:
         self._stop.set()
@@ -102,7 +103,17 @@ class LogWatcher(threading.Thread):
     def current_file(self) -> Path | None:
         return self._follower.path if self._follower else None
 
+    def reread(self) -> None:
+        """Read the followed file again from its start (e.g. with card data in another
+        language); thread-safe, done at the next poll."""
+        self._reread.set()
+
     def poll_once(self) -> None:
+        if self._reread.is_set():
+            self._reread.clear()
+            if self._follower is not None:
+                self._follower.close()
+                self._follower = None  # the scan below starts it again from the beginning
         now = time.monotonic()
         scanned = False
         if self._follower is None or now - self._last_scan > 2.0:

@@ -219,3 +219,25 @@ def test_size_limit_message_is_reported_at_once(tmp_path, bg_log, cards):
     svc.watcher.poll_once()  # no waiting for the 3-minute stall timeout
     svc.stop()
     assert stalls == [True]
+
+
+def test_card_data_in_another_language_reads_the_log_again(tmp_path, bg_log, cards):
+    from hearthwatch.cards import CardDB
+    from hearthwatch.service import _other_language
+
+    logs = tmp_path / "Logs"
+    session(logs, "Hearthstone_2026_11_02_20_00_00", unfinished(bg_log))
+    files = []
+    svc = TrackerService(logs, MatchDB(tmp_path / "m.db"), CardDB(),
+                         Callbacks(on_file=files.append), sim_runs=20, hs_running=lambda: True)
+    svc.watcher.poll_once()  # read without any card data (first start, still downloading)
+    assert len(files) == 1
+    svc.set_cards(cards)  # the card data arrives: texts and buffs need the log again
+    svc.watcher.poll_once()
+    assert len(files) == 2
+    svc.set_cards(cards)  # same data again: nothing to read again
+    svc.watcher.poll_once()
+    assert len(files) == 2
+    svc.stop()
+    assert _other_language(CardDB(), cards) and not _other_language(cards, cards)
+    assert not _other_language(cards, CardDB())
