@@ -184,14 +184,50 @@ ART_CROP = 0.07
 _textures: dict[str, Gdk.Texture] = {}
 
 
+def _light_border(pix: GdkPixbuf.Pixbuf) -> tuple[int, int, int, int]:
+    """Width of the plain light bars around a picture (left, top, right, bottom): some art
+    (often of golden minions) is narrower than its square and padded with white."""
+    w, h, n, stride = pix.get_width(), pix.get_height(), pix.get_n_channels(), pix.get_rowstride()
+    data = pix.get_pixels()
+
+    def light(x: int, y: int) -> bool:
+        i = y * stride + x * n
+        return data[i] + data[i + 1] + data[i + 2] >= 3 * 225
+
+    def column(x: int) -> bool:
+        samples = range(0, h, 4)
+        return sum(light(x, y) for y in samples) >= 0.9 * len(samples)
+
+    def row(y: int) -> bool:
+        samples = range(0, w, 4)
+        return sum(light(x, y) for x in samples) >= 0.9 * len(samples)
+
+    left = next((x for x in range(w // 3) if not column(x)), w // 3)
+    right = next((k for k in range(w // 3) if not column(w - 1 - k)), w // 3)
+    top = next((y for y in range(h // 3) if not row(y)), h // 3)
+    bottom = next((k for k in range(h // 3) if not row(h - 1 - k)), h // 3)
+    return left, top, right, bottom
+
+
+def _crop_art(pix: GdkPixbuf.Pixbuf) -> GdkPixbuf.Pixbuf:
+    """Cut off white bars and the light rim, then the biggest centred square."""
+    left, top, right, bottom = _light_border(pix)
+    x, y = left, top
+    w, h = pix.get_width() - left - right, pix.get_height() - top - bottom
+    cut_w, cut_h = int(w * ART_CROP), int(h * ART_CROP)
+    x, y, w, h = x + cut_w, y + cut_h, w - 2 * cut_w, h - 2 * cut_h
+    side = min(w, h)
+    if side <= 8:
+        return pix
+    return pix.new_subpixbuf(x + (w - side) // 2, y + (h - side) // 2, side, side)
+
+
 def _set_art(image: Gtk.Image, path) -> None:
     key = str(path)
     texture = _textures.get(key)
     if texture is None:
         try:
-            pix = GdkPixbuf.Pixbuf.new_from_file(key)
-            cut_w, cut_h = int(pix.get_width() * ART_CROP), int(pix.get_height() * ART_CROP)
-            pix = pix.new_subpixbuf(cut_w, cut_h, pix.get_width() - 2 * cut_w, pix.get_height() - 2 * cut_h)
+            pix = _crop_art(GdkPixbuf.Pixbuf.new_from_file(key))
             texture = Gdk.Texture.new_for_pixbuf(pix)
         except GLib.Error:
             image.set_from_file(key)  # unreadable image: let GTK show what it can
@@ -207,8 +243,9 @@ def _set_art(image: Gtk.Image, path) -> None:
 _board_art = {"normal": 56, "compact": 40}
 
 
-def set_board_art(wide: bool) -> None:
-    _board_art.update(normal=64 if wide else 44, compact=40 if wide else 30)
+def set_board_art(wide: bool, xwide: bool = False) -> None:
+    """Art sizes for the layout; very wide windows have room for bigger lobby boards."""
+    _board_art.update(normal=64 if wide else 44, compact=(56 if xwide else 40) if wide else 30)
 
 
 # everything grows with the window: art sizes and text are multiplied by this
@@ -234,7 +271,8 @@ def scale_for_width(width: int, wide: bool) -> float:
     """How much bigger than normal everything may be at this window width: 1.0 up to
     a comfortable width (about 1100 px wide, 480 px narrow), then growing in 10 %
     steps, at most 1.6."""
-    base = 1100 if wide else 480
+    # very wide windows (lobby boards beside the players) start growing later
+    base = (1600 if width >= 1500 else 1100) if wide else 480
     factor = max(1.0, min(1.6, width / base))
     return round(factor * 10) / 10
 
@@ -298,7 +336,7 @@ class OddsBar(Gtk.Widget):
 class MinionChip(Gtk.Box):
     """Compact minion: attack/health big, name and keywords small."""
 
-    def __init__(self, m: Minion, compact: bool = False) -> None:
+    def __init__(self, m: Minion, compact: bool = False, names: bool = True) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         self.add_css_class("minion")
         if compact:
@@ -324,7 +362,8 @@ class MinionChip(Gtk.Box):
                          ellipsize=Pango.EllipsizeMode.END, justify=Gtk.Justification.CENTER,
                          max_width_chars=9 if compact else 12, width_chars=3)
         name.add_css_class("minion-name")
-        self.append(name)
+        if names:  # without: the name is in the hover popup
+            self.append(name)
         kws = " · ".join(_(KEYWORD_SHORT.get(k, k)) for k in m.keywords())
         if kws and not compact:
             kw = Gtk.Label(label=kws, ellipsize=Pango.EllipsizeMode.END, max_width_chars=12)
@@ -401,7 +440,7 @@ BOARD_SLOTS = 7
 
 
 def board_flow(minions: list[Minion], empty_text: str = "",
-               compact: bool = False) -> Gtk.Widget:
+               compact: bool = False, names: bool = True) -> Gtk.Widget:
     """All minions of a warband side by side (wraps when narrow)."""
     if not minions:
         empty_text = empty_text or _("empty board")
@@ -413,7 +452,7 @@ def board_flow(minions: list[Minion], empty_text: str = "",
     # board lines up with the others; cards shrink in narrow windows
     row = Gtk.Box(spacing=4, homogeneous=True, valign=Gtk.Align.START)
     for m in minions:
-        row.append(MinionChip(m, compact))
+        row.append(MinionChip(m, compact, names))
     for _i in range(BOARD_SLOTS - len(minions)):
         row.append(Gtk.Box())
     return row

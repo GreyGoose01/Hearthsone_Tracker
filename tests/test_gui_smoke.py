@@ -146,3 +146,19 @@ def test_minion_popup_and_fitting(bg_log, cards):
     view._apply_scale()
     assert view._scale == 1.0
     widgets.set_ui_scale(1.0)
+
+
+def test_white_bars_are_cut_off_the_art(tmp_path):
+    _gtk()
+    from gi.repository import GdkPixbuf
+
+    from hearthwatch.ui import widgets
+
+    # 256x256: white bars of 40 px left and right around a dark picture
+    pix = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, 256, 256)
+    pix.fill(0xFFFFFFFF)
+    pix.new_subpixbuf(40, 0, 176, 256).fill(0x303030FF)
+    assert widgets._light_border(pix) == (40, 0, 40, 0)
+    out = widgets._crop_art(pix)
+    assert out.get_width() == out.get_height()
+    assert widgets._light_border(out) == (0, 0, 0, 0)  # only the picture is left

@@ -39,15 +39,20 @@ from hearthwatch.ui.widgets import (
     pill,
     result_dot,
     scale_for_width,
+    scaled,
     set_board_art,
     set_ui_scale,
     stat_tile,
+    ui_scale,
 )
 
 MASCOT = Path(__file__).resolve().parent.parent / "assets" / "dwarf-thumbs-up.png"
 WAITING_TEXT = N_("Start Hearthstone with hearthstone-linux-gui and join a Battlegrounds game.")
 PHASES = {"recruit": (N_("Recruit"), "phase-recruit"), "combat": (N_("Combat"), "phase-combat")}
 RESULT_TEXT = {"win": N_("Win"), "draw": N_("Draw"), "loss": N_("Loss")}
+XWIDE = 1500  # from this window width on, lobby boards sit beside the players
+XWIDE_LEFT = 680  # width of the left column then (grows with the scale)
+LOBBY_INFO_WIDTH = 280  # player info beside a lobby board
 
 
 def _mascot() -> Gdk.Texture | None:
@@ -107,7 +112,10 @@ class MainView(Gtk.Stack):
         self.columns = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
         self.left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, hexpand=True)
         self.right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, hexpand=True)
-        self.columns.append(self.left)
+        # the left column is limited in very wide windows: the lobby gets the rest
+        self.left_clamp = Adw.Clamp(maximum_size=100000, tightening_threshold=100000, child=self.left,
+                                    hexpand=True)
+        self.columns.append(self.left_clamp)
         self.columns.append(self.right)
         # wide enough to use big screens; the content itself grows with the window
         clamp = Adw.Clamp(maximum_size=2600, tightening_threshold=2200, child=self.columns,
@@ -137,6 +145,7 @@ class MainView(Gtk.Stack):
         self._in_game = False
         self._notice = ""
         self._wide = False
+        self._xwide = False  # very wide: lobby boards beside the players, not below
         self._scale = 1.0
         self._target: float | None = None  # scale wanted for the window width
         self._width = 0
@@ -147,15 +156,28 @@ class MainView(Gtk.Stack):
     def set_wide(self, wide: bool) -> None:
         self._wide = wide
         self._target = None  # pick the scale for the new layout
-        set_board_art(wide)
+        self._set_xwide(False)
         GLib.idle_add(lambda: (self._rebuild(), False)[1])  # boards with the new card size
         self.columns.set_orientation(Gtk.Orientation.HORIZONTAL if wide else Gtk.Orientation.VERTICAL)
-        self.columns.set_homogeneous(wide)
+
+    def _set_xwide(self, xwide: bool) -> None:
+        self._xwide = xwide
+        set_board_art(self._wide, xwide)
+        self.columns.set_homogeneous(self._wide and not xwide)
+        # very wide: the left column keeps a comfortable width, the lobby takes the rest
+        limit = int(XWIDE_LEFT * ui_scale()) if xwide else 100000
+        self.left_clamp.set_maximum_size(limit)
+        self.left_clamp.set_tightening_threshold(limit)
+        self.left_clamp.set_hexpand(not xwide)
 
     def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
         Gtk.Stack.do_size_allocate(self, width, height, baseline)
         self._width = width
         target = scale_for_width(width, self._wide) if self.settings.scale_with_window else 1.0
+        xwide = self._wide and width >= XWIDE
+        if xwide != self._xwide:
+            self._xwide = xwide
+            self._target = None
         if target != self._target or (self._scale > 1.0 and not self._fits()):
             self._target = target
             self._schedule_scale()
@@ -181,10 +203,13 @@ class MainView(Gtk.Stack):
         (fonts and themes differ: measure instead of guessing)."""
         self._fit_pending = False
         scale = self._target or 1.0
+        first = True
         while True:
-            if scale != self._scale:
+            if scale != self._scale or first:
+                first = False
                 self._scale = scale
                 set_ui_scale(scale)
+                self._set_xwide(self._xwide)
                 self._rebuild()
             if scale <= 1.0 or self._fits():
                 break
@@ -660,7 +685,7 @@ class MainView(Gtk.Stack):
              o.triples, tuple(o.trinkets),
              (o.last_board.round, self._board_sig(o.last_board.minions)) if o.last_board else None)
             for o in s.opponents
-        ) + ((self.settings.show_art, self.settings.show_lobby_boards),)
+        ) + ((self.settings.show_art, self.settings.show_lobby_boards, self._xwide),)
         if not self._changed("lobby", sig):
             return
         clear(self.lobby)
@@ -733,10 +758,20 @@ class MainView(Gtk.Stack):
         row.append(top)
         if (self.settings.show_lobby_boards and o.last_board is not None
                 and not o.is_me and not o.dead):
-            board = board_flow(o.last_board.minions, compact=True)
-            board.set_margin_start(36)
+            # very wide: names only on hover, so all eight players fit on one screen
+            board = board_flow(o.last_board.minions, compact=True, names=not self._xwide)
             board.set_tooltip_text(_("Board from round {round}").format(round=o.last_board.round))
-            row.append(board)
+            if self._xwide:  # beside the player: eight players fit on one screen
+                text.set_hexpand(False)
+                text.set_size_request(scaled(LOBBY_INFO_WIDTH), -1)
+                board.set_hexpand(True)
+                board.set_valign(Gtk.Align.CENTER)
+                top.append(board)
+            else:
+                board.set_margin_start(36)
+                row.append(board)
+        elif self._xwide:
+            text.set_hexpand(True)
         return row
 
     # -- end of game ---------------------------------------------------------------
