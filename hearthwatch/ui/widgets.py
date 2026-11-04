@@ -36,11 +36,18 @@ CSS = """
 .minion { background: alpha(currentColor, 0.06); border-radius: 10px; padding: 5px 6px;
           border: 1px solid transparent; }
 .minion.golden { border-color: #e5a50a; background: alpha(#e5a50a, 0.10); }
+.minion:hover { border-color: alpha(@accent_color, 0.55); }
 .minion-atk { font-weight: 800; font-size: 1.15em; color: #e5a50a; }
 .minion-hp { font-weight: 800; font-size: 1.15em; color: @error_color; }
 .minion-name { font-size: 0.78em; }
 .minion-kw { font-size: 0.7em; opacity: 0.7; }
 .minion-buff { font-size: 0.7em; font-weight: 700; color: @accent_color; }
+.minion-tip { padding: 4px; }
+.minion-tip .tip-name { font-weight: 800; font-size: 1.1em; }
+.minion-tip .tip-text { font-size: 0.95em; }
+.minion-tip .tip-caption { font-size: 0.8em; font-weight: 700; opacity: 0.7; }
+.minion-tip .tip-buff-name { font-weight: 700; }
+.minion-tip .tip-buff-text { font-size: 0.9em; opacity: 0.85; }
 .place-badge { min-width: 28px; min-height: 28px; border-radius: 999px; font-weight: 800;
                background: alpha(currentColor, 0.08); }
 .place-badge.top { background: alpha(@success_bg_color, 0.22); color: @success_color; }
@@ -177,14 +184,50 @@ ART_CROP = 0.07
 _textures: dict[str, Gdk.Texture] = {}
 
 
+def _light_border(pix: GdkPixbuf.Pixbuf) -> tuple[int, int, int, int]:
+    """Width of the plain light bars around a picture (left, top, right, bottom): some art
+    (often of golden minions) is narrower than its square and padded with white."""
+    w, h, n, stride = pix.get_width(), pix.get_height(), pix.get_n_channels(), pix.get_rowstride()
+    data = pix.get_pixels()
+
+    def light(x: int, y: int) -> bool:
+        i = y * stride + x * n
+        return data[i] + data[i + 1] + data[i + 2] >= 3 * 225
+
+    def column(x: int) -> bool:
+        samples = range(0, h, 4)
+        return sum(light(x, y) for y in samples) >= 0.9 * len(samples)
+
+    def row(y: int) -> bool:
+        samples = range(0, w, 4)
+        return sum(light(x, y) for x in samples) >= 0.9 * len(samples)
+
+    left = next((x for x in range(w // 3) if not column(x)), w // 3)
+    right = next((k for k in range(w // 3) if not column(w - 1 - k)), w // 3)
+    top = next((y for y in range(h // 3) if not row(y)), h // 3)
+    bottom = next((k for k in range(h // 3) if not row(h - 1 - k)), h // 3)
+    return left, top, right, bottom
+
+
+def _crop_art(pix: GdkPixbuf.Pixbuf) -> GdkPixbuf.Pixbuf:
+    """Cut off white bars and the light rim, then the biggest centred square."""
+    left, top, right, bottom = _light_border(pix)
+    x, y = left, top
+    w, h = pix.get_width() - left - right, pix.get_height() - top - bottom
+    cut_w, cut_h = int(w * ART_CROP), int(h * ART_CROP)
+    x, y, w, h = x + cut_w, y + cut_h, w - 2 * cut_w, h - 2 * cut_h
+    side = min(w, h)
+    if side <= 8:
+        return pix
+    return pix.new_subpixbuf(x + (w - side) // 2, y + (h - side) // 2, side, side)
+
+
 def _set_art(image: Gtk.Image, path) -> None:
     key = str(path)
     texture = _textures.get(key)
     if texture is None:
         try:
-            pix = GdkPixbuf.Pixbuf.new_from_file(key)
-            cut_w, cut_h = int(pix.get_width() * ART_CROP), int(pix.get_height() * ART_CROP)
-            pix = pix.new_subpixbuf(cut_w, cut_h, pix.get_width() - 2 * cut_w, pix.get_height() - 2 * cut_h)
+            pix = _crop_art(GdkPixbuf.Pixbuf.new_from_file(key))
             texture = Gdk.Texture.new_for_pixbuf(pix)
         except GLib.Error:
             image.set_from_file(key)  # unreadable image: let GTK show what it can
@@ -200,8 +243,9 @@ def _set_art(image: Gtk.Image, path) -> None:
 _board_art = {"normal": 56, "compact": 40}
 
 
-def set_board_art(wide: bool) -> None:
-    _board_art.update(normal=64 if wide else 44, compact=40 if wide else 30)
+def set_board_art(wide: bool, xwide: bool = False) -> None:
+    """Art sizes for the layout; very wide windows have room for bigger lobby boards."""
+    _board_art.update(normal=64 if wide else 44, compact=(56 if xwide else 40) if wide else 30)
 
 
 # everything grows with the window: art sizes and text are multiplied by this
@@ -227,7 +271,8 @@ def scale_for_width(width: int, wide: bool) -> float:
     """How much bigger than normal everything may be at this window width: 1.0 up to
     a comfortable width (about 1100 px wide, 480 px narrow), then growing in 10 %
     steps, at most 1.6."""
-    base = 1100 if wide else 480
+    # very wide windows (lobby boards beside the players) start growing later
+    base = (1600 if width >= 1500 else 1100) if wide else 480
     factor = max(1.0, min(1.6, width / base))
     return round(factor * 10) / 10
 
@@ -291,7 +336,7 @@ class OddsBar(Gtk.Widget):
 class MinionChip(Gtk.Box):
     """Compact minion: attack/health big, name and keywords small."""
 
-    def __init__(self, m: Minion, compact: bool = False) -> None:
+    def __init__(self, m: Minion, compact: bool = False, names: bool = True) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         self.add_css_class("minion")
         if compact:
@@ -317,7 +362,8 @@ class MinionChip(Gtk.Box):
                          ellipsize=Pango.EllipsizeMode.END, justify=Gtk.Justification.CENTER,
                          max_width_chars=9 if compact else 12, width_chars=3)
         name.add_css_class("minion-name")
-        self.append(name)
+        if names:  # without: the name is in the hover popup
+            self.append(name)
         kws = " · ".join(_(KEYWORD_SHORT.get(k, k)) for k in m.keywords())
         if kws and not compact:
             kw = Gtk.Label(label=kws, ellipsize=Pango.EllipsizeMode.END, max_width_chars=12)
@@ -330,14 +376,71 @@ class MinionChip(Gtk.Box):
             buff = Gtk.Label(label=f"✦ {count}" if compact else "✦ " + text.format(count=count))
             buff.add_css_class("minion-buff")
             self.append(buff)
-        self.set_tooltip_text(m.tooltip())
+        # a card-like popup with art, text and buffs; built only when first shown
+        self._minion = m
+        self._tip: Gtk.Widget | None = None
+        self.set_has_tooltip(True)
+        self.connect("query-tooltip", self._on_query_tooltip)
+
+    def _on_query_tooltip(self, _w, _x, _y, _keyboard, tooltip: Gtk.Tooltip) -> bool:
+        if self._tip is None:
+            self._tip = minion_tooltip(self._minion)
+        tooltip.set_custom(self._tip)
+        return True
+
+
+def minion_tooltip(m: Minion) -> Gtk.Widget:
+    """Hover popup for a minion: art, name, stats, keywords, card text and every buff."""
+    box = Gtk.Box(spacing=12)
+    box.add_css_class("minion-tip")
+    art = card_art(m.card_id, 96)
+    if art is not None:
+        art.set_valign(Gtk.Align.START)
+        box.append(art)
+    info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+    box.append(info)
+
+    def label(text: str, css: str, **kw) -> Gtk.Label:
+        lab = Gtk.Label(label=text, xalign=0, wrap=True, max_width_chars=42, **kw)
+        lab.add_css_class(css)
+        info.append(lab)
+        return lab
+
+    head = Gtk.Box(spacing=8)
+    name = Gtk.Label(label=("★ " if m.golden else "") + (m.name or m.card_id), xalign=0, wrap=True,
+                     max_width_chars=30, hexpand=True)
+    name.add_css_class("tip-name")
+    head.append(name)
+    stats = Gtk.Box(spacing=2, valign=Gtk.Align.CENTER)
+    for text, css in ((str(m.attack), "minion-atk"), ("/", "dim-label"), (str(m.health), "minion-hp")):
+        part = Gtk.Label(label=text)
+        part.add_css_class(css)
+        stats.append(part)
+    head.append(stats)
+    info.append(head)
+    meta = [tribe_name(t) for t in m.tribes]
+    meta += [_(k) for k in m.keywords()]
+    if meta:
+        label(" · ".join(meta), "tip-caption")
+    if m.text:
+        label(m.text, "tip-text")
+    if m.buffs:
+        info.append(Gtk.Separator(margin_top=4, margin_bottom=2))
+        label(_("Buffs:").rstrip(":"), "tip-caption")
+        texts = m.buff_texts if len(m.buff_texts) == len(m.buffs) else [""] * len(m.buffs)
+        for buff, text in zip(m.buffs, texts):
+            label("✦ " + buff, "tip-buff-name")
+            if text:
+                lab = label(text, "tip-buff-text")
+                lab.set_margin_start(14)
+    return box
 
 
 BOARD_SLOTS = 7
 
 
 def board_flow(minions: list[Minion], empty_text: str = "",
-               compact: bool = False) -> Gtk.Widget:
+               compact: bool = False, names: bool = True) -> Gtk.Widget:
     """All minions of a warband side by side (wraps when narrow)."""
     if not minions:
         empty_text = empty_text or _("empty board")
@@ -349,7 +452,7 @@ def board_flow(minions: list[Minion], empty_text: str = "",
     # board lines up with the others; cards shrink in narrow windows
     row = Gtk.Box(spacing=4, homogeneous=True, valign=Gtk.Align.START)
     for m in minions:
-        row.append(MinionChip(m, compact))
+        row.append(MinionChip(m, compact, names))
     for _i in range(BOARD_SLOTS - len(minions)):
         row.append(Gtk.Box())
     return row

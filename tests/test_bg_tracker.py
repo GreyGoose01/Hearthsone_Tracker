@@ -431,3 +431,41 @@ def test_hero_selection_ends_when_you_pick(cards):
     assert not s.choosing_hero and s.hero_options == []
     assert s.hero_name == "Held A"
     assert s.place == 0
+
+
+def test_a_reset_combat_copy_does_not_change_the_lobby_health(cards):
+    p = "D 20:00:00.0 PowerTaskList.DebugPrintPower() - "
+
+    def hero(eid, zone, *tags):
+        return [p + f"FULL_ENTITY - Updating [entityName=BG_HERO_C id={eid} zone={zone} zonePos=0 "
+                    f"cardId=BG_HERO_C player=13] CardID=BG_HERO_C",
+                p + "    tag=CONTROLLER value=13", p + "    tag=CARDTYPE value=HERO",
+                p + f"    tag=ZONE value={zone}"] + [p + f"    tag={t} value={v}" for t, v in tags]
+
+    lines = [
+        "D 20:00:00.0 GameState.DebugPrintGame() - GameType=GT_BATTLEGROUNDS",
+        p + "CREATE_GAME", p + "    GameEntity EntityID=1", p + "        tag=TURN value=5",
+        p + "    Player EntityID=2 PlayerID=5 GameAccountId=[hi=1 lo=2]",
+        p + "        tag=CONTROLLER value=5", p + "        tag=CARDTYPE value=PLAYER",
+        *hero(20, "SETASIDE", ("PLAYER_ID", 3), ("PLAYER_LEADERBOARD_PLACE", 2), ("HEALTH", 30),
+              ("ARMOR", 17), ("PLAYER_TECH_LEVEL", 2)),
+        *hero(21, "PLAY", ("PLAYER_ID", 3), ("HEALTH", 30), ("ARMOR", 17), ("PLAYER_TECH_LEVEL", 2)),
+        # the fight: both lose armor ...
+        p + "TAG_CHANGE Entity=21 tag=ARMOR value=12",
+        p + "TAG_CHANGE Entity=20 tag=ARMOR value=12",
+        # ... then the combat copy is reset
+        p + "TAG_CHANGE Entity=21 tag=HEALTH value=0",
+        p + "TAG_CHANGE Entity=21 tag=ARMOR value=0",
+        p + "TAG_CHANGE Entity=21 tag=PLAYER_TECH_LEVEL value=0",
+        p + "TAG_CHANGE Entity=21 tag=HEALTH value=30",
+        p + "TAG_CHANGE Entity=21 tag=ARMOR value=17",
+    ]
+    states = []
+    tracker = BattlegroundsTracker(cards, states.append)
+    game = GameState([tracker])
+    for line in lines:
+        game.feed_line(line)
+        tracker.batch_done(game)
+    tracker.flush()
+    them = next(o for o in states[-1].opponents if o.hero_card_id == "BG_HERO_C")
+    assert (them.health, them.armor, them.tavern_tier) == (30, 12, 2)
