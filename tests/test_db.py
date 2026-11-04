@@ -29,3 +29,19 @@ def test_add_and_stats(tmp_path):
     assert db.summary().last_mmr == 6543
     db.delete(matches[0].id)
     assert db.summary().games == 2
+
+
+def test_names_stored_as_card_ids_are_fixed_later(tmp_path):
+    from hearthwatch.bg.models import MatchResult, Minion
+    from hearthwatch.db import MatchDB
+
+    db = MatchDB(tmp_path / "m.db")
+    db.add(MatchResult("k", "2026-11-04T10:00:00", "2026-11-04T10:30:00", "GT_BATTLEGROUNDS",
+                       "TB_BaconShop_HERO_11", "TB_BaconShop_HERO_11", 6, 10, 4,
+                       final_board=[Minion("BG_X", 1, 1, name="BG_X"), Minion("BG_Y", 2, 2, name="Known")]))
+    names = {"TB_BaconShop_HERO_11": "Ragnaros the Firelord", "BG_X": "Bonker"}
+    assert db.fix_names(lambda cid: names.get(cid, cid)) == 1
+    m = db.matches()[0].result
+    assert m.hero_name == "Ragnaros the Firelord"
+    assert [x.name for x in m.final_board] == ["Bonker", "Known"]
+    assert db.fix_names(lambda cid: names.get(cid, cid)) == 0

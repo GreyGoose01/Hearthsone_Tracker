@@ -20,6 +20,7 @@ class Settings:
     language: str = "auto"  # "auto" (system), "en" or "de": interface and card names
     show_art: bool = True
     font_scale: int = 100  # percent
+    scale_with_window: bool = True  # art and text grow when the window is made bigger
     sim_runs: int = 2000
     show_buffs: bool = True  # "Your buffs" with your live board
     show_history: bool = True  # result dots of this game

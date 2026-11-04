@@ -94,6 +94,28 @@ class MatchDB:
             )
             return cur.lastrowid if cur.rowcount else None
 
+    def fix_names(self, name_of) -> int:
+        """Replace names that were stored as card ids (the game was saved before the
+        card data had loaded). ``name_of(card_id)`` returns the name, or the id when
+        it is unknown. Returns the number of changed games."""
+        changed = 0
+        with self._conn:
+            rows = self._conn.execute("SELECT id, hero_card_id, hero_name, final_board FROM matches").fetchall()
+            for row in rows:
+                hero = row["hero_name"]
+                if hero == row["hero_card_id"] or not hero:
+                    hero = name_of(row["hero_card_id"])
+                board = json.loads(row["final_board"])
+                for m in board:
+                    if m.get("name") in ("", m.get("card_id")):
+                        m["name"] = name_of(m.get("card_id", ""))
+                new_board = json.dumps(board)
+                if hero != row["hero_name"] or new_board != row["final_board"]:
+                    self._conn.execute("UPDATE matches SET hero_name = ?, final_board = ? WHERE id = ?",
+                                       (hero, new_board, row["id"]))
+                    changed += 1
+        return changed
+
     def set_mmr(self, match_id: int, mmr: int | None) -> None:
         with self._lock, self._conn:
             self._conn.execute("UPDATE matches SET mmr_after=? WHERE id=?", (mmr, match_id))

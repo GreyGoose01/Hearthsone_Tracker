@@ -371,4 +371,6 @@ DE: dict[str, str] = {
         "Hearthstone wurde nicht gefunden. Installiere es mit hearthstone-linux-gui.",
     "Simulated with AutoTavern ({runs} combats)": "Simuliert mit AutoTavern ({runs} Kämpfe)",
     "Built-in simulator – it knows only some card effects": "Eingebauter Simulator – kennt nur einen Teil der Karteneffekte",
+    "Grow with the window": "Mit dem Fenster wachsen",
+    "Bigger pictures and text in a big window": "Größere Bilder und Schrift in einem großen Fenster",
 }

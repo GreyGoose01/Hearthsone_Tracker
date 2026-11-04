@@ -38,7 +38,9 @@ from hearthwatch.ui.widgets import (
     clear,
     pill,
     result_dot,
+    scale_for_width,
     set_board_art,
+    set_ui_scale,
     stat_tile,
 )
 
@@ -107,7 +109,8 @@ class MainView(Gtk.Stack):
         self.right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, hexpand=True)
         self.columns.append(self.left)
         self.columns.append(self.right)
-        clamp = Adw.Clamp(maximum_size=1400, tightening_threshold=1100, child=self.columns,
+        # wide enough to use big screens; the content itself grows with the window
+        clamp = Adw.Clamp(maximum_size=2600, tightening_threshold=2200, child=self.columns,
                           margin_top=10, margin_bottom=14, margin_start=10, margin_end=10)
         self.add_named(Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER, child=clamp), "game")
 
@@ -120,7 +123,7 @@ class MainView(Gtk.Stack):
         self._build_lobby()
 
         self.summary_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
-        summary_clamp = Adw.Clamp(maximum_size=760, child=self.summary_box,
+        summary_clamp = Adw.Clamp(maximum_size=1500, tightening_threshold=1100, child=self.summary_box,
                                   margin_top=12, margin_bottom=18, margin_start=12, margin_end=12)
         self.add_named(Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER,
                                           child=summary_clamp), "summary")
@@ -132,16 +135,44 @@ class MainView(Gtk.Stack):
         self._summary_shown = False
         self._in_game = False
         self._notice = ""
+        self._wide = False
+        self._scale = 1.0
         self.show_waiting()
 
     # -- settings / layout ------------------------------------------------------
     def set_wide(self, wide: bool) -> None:
+        self._wide = wide
         set_board_art(wide)
-        self._signatures.clear()  # rebuild the boards with the new card size
-        if self._state is not None and self._in_game:
-            GLib.idle_add(lambda: (self.update_state(self._state), False)[1])
+        GLib.idle_add(lambda: (self._rebuild(), False)[1])  # boards with the new card size
         self.columns.set_orientation(Gtk.Orientation.HORIZONTAL if wide else Gtk.Orientation.VERTICAL)
         self.columns.set_homogeneous(wide)
+
+    def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
+        Gtk.Stack.do_size_allocate(self, width, height, baseline)
+        factor = scale_for_width(width, self._wide) if self.settings.scale_with_window else 1.0
+        if factor != self._scale:
+            self._scale = factor
+            GLib.idle_add(self._apply_scale)  # never change widgets while they are laid out
+
+    def _apply_scale(self) -> bool:
+        set_ui_scale(self._scale)
+        self._rebuild()
+        return False
+
+    def _rebuild(self) -> None:
+        """Build everything again (new card sizes, settings or layout)."""
+        self._signatures.clear()
+        if self._state is not None and self._in_game:
+            self.update_state(self._state)
+            if self._combat is not None and self.focus.get_visible_child_name() == "combat":
+                combat, actual = self._combat, self._combat.actual
+                self.update_combat(combat)
+                if combat.round in self._predictions and getattr(self, "_last_sim", None):
+                    self.update_sim(*self._last_sim)
+                if actual is not None:
+                    self.update_result(combat)
+        elif self._summary_shown and self._state is not None:
+            self.show_summary(self._state)
 
     @property
     def in_game(self) -> bool:
@@ -154,9 +185,11 @@ class MainView(Gtk.Stack):
 
     def apply_settings(self, settings: Settings) -> None:
         self.settings = settings
-        self._signatures.clear()  # rebuild everything with the new options
-        if self._state is not None and self._in_game:
-            self.update_state(self._state)
+        if not settings.scale_with_window and self._scale != 1.0:
+            self._scale = 1.0
+            set_ui_scale(1.0)
+        self.queue_allocate()
+        self._rebuild()  # everything with the new options
 
     # -- header -------------------------------------------------------------------
     def _build_header(self) -> None:
@@ -504,6 +537,7 @@ class MainView(Gtk.Stack):
 
     def update_sim(self, c: CombatSnapshot, r: SimResult) -> None:
         self._predictions[c.round] = (r.win, r.draw, r.loss)
+        self._last_sim = (c, r)
         if self._combat is None or c.round != self._combat.round:
             return
         self.odds_values["win"].set_text(f"{r.win:.0%}")

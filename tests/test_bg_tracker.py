@@ -353,3 +353,14 @@ def test_internal_helper_enchantments_are_hidden_or_renamed(cards):
 def test_combat_snapshot_knows_the_damage_cap(bg_log, cards):
     _, _, _, combats, _ = run(bg_log, cards)
     assert combats[0].damage_cap == 5
+
+
+def test_summary_names_are_fixed_when_card_data_arrives(bg_log, cards):
+    from hearthwatch.cards import CardDB
+
+    tracker, _, states, _, _ = run(bg_log, CardDB())
+    assert tracker.state.summary.hero_name == "BG_HERO_A"
+    tracker.cards = cards
+    tracker.relabel()
+    assert tracker.state.summary.hero_name == "Held A"
+    assert tracker.state.summary.final_board[0].name == "Wildschwein"
