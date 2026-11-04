@@ -20,6 +20,7 @@ from hearthwatch.i18n import _  # noqa: E402
 from hearthwatch.service import Callbacks, TrackerService  # noqa: E402
 from hearthwatch.ui.diagnose_window import DiagnoseWindow  # noqa: E402
 from hearthwatch.ui.history_page import HistoryWindow  # noqa: E402
+from hearthwatch.ui.minions_window import MinionsWindow  # noqa: E402
 from hearthwatch import settings as app_settings  # noqa: E402
 from hearthwatch.art import ArtCache  # noqa: E402
 from hearthwatch.ui.main_view import MainView  # noqa: E402
@@ -55,6 +56,9 @@ class MainWindow(Adw.ApplicationWindow):
         history = Gtk.Button(icon_name="document-open-recent-symbolic", tooltip_text=_("History & statistics"))
         history.set_action_name("app.history")
         header.pack_start(history)
+        minions = Gtk.Button(icon_name="view-grid-symbolic", tooltip_text=_("Minions by tier"))
+        minions.set_action_name("app.minions")
+        header.pack_start(minions)
         menu = Gio.Menu()
         menu.append(_("Check setup"), "app.diagnose")
         menu.append(_("Set up logging"), "app.setup-logs")
@@ -134,6 +138,9 @@ class TrackerApp(Adw.Application):
         self._add_action("setup-logs", self._on_setup_logs)
         self._add_action("diagnose", self._on_diagnose)
         self._add_action("history", self._on_history)
+        self._add_action("minions", self._on_minions)
+        self._minions_window: MinionsWindow | None = None
+        self.cards = CardDB()
         self._add_action("settings", self._on_settings)
         self._forced_card_refresh = False
         self._diagnose_window: DiagnoseWindow | None = None
@@ -180,6 +187,7 @@ class TrackerApp(Adw.Application):
             ).format(path=logs_dir))
         # local card cache first (fast), so names are right from the start
         cards = CardDB.load(tp.cache_dir, self.locale, download=False)
+        self._set_cards(cards)
         self.service = TrackerService(logs_dir, db, cards, callbacks, sim_runs=self.settings.sim_runs)
         self.service.start()
         if not self.offline:
@@ -202,6 +210,8 @@ class TrackerApp(Adw.Application):
         self._last[kind] = value
         if self.window is None:
             return
+        if kind == "state" and self._minions_window is not None:
+            self._minions_window.page.update_state(value)
         live = self.window.live
         {
             "state": live.update_state,
@@ -232,7 +242,7 @@ class TrackerApp(Adw.Application):
             if kind == "state":
                 win.live.keep_predictions(old.live)
         reopen_settings = self._settings_dialog is not None
-        for attr in ("_diagnose_window", "_history_window", "_settings_dialog"):
+        for attr in ("_diagnose_window", "_history_window", "_minions_window", "_settings_dialog"):
             child = getattr(self, attr)
             setattr(self, attr, None)
             if child is None:
@@ -269,6 +279,8 @@ class TrackerApp(Adw.Application):
         cards = CardDB.load(cache_dir, self.locale, download=True, force=force)
         after = CardDB.cache_age(cache_dir, self.locale)
         updated = after is not None and (before is None or after < before)
+        if len(cards) and (updated or force or not len(self.cards)):
+            GLib.idle_add(lambda: (self._set_cards(cards), False)[1])
         if self.service is not None and len(cards) and (updated or force):
             self.service.set_cards(cards)
         elif not len(cards):
@@ -331,6 +343,27 @@ class TrackerApp(Adw.Application):
         else:
             self._history_window.refresh()
         self._history_window.present()
+
+    def _set_cards(self, cards: CardDB) -> None:
+        """New card data (main loop): keep it for the minion browser."""
+        self.cards = cards
+        if self._minions_window is not None:
+            self._minions_window.page.set_cards(cards)
+
+    def _on_minions(self) -> None:
+        if self.window is None:
+            return
+        if self._minions_window is None:
+            self._minions_window = MinionsWindow(self, self.window)
+            self._minions_window.page.set_cards(self.cards)
+            self._minions_window.page.update_state(self._last.get("state"))
+
+            def closed(*_):
+                self._minions_window = None
+                return False
+
+            self._minions_window.connect("close-request", closed)
+        self._minions_window.present()
 
     def _on_diagnose(self) -> None:
         if self.window is None:
@@ -406,6 +439,8 @@ class TrackerApp(Adw.Application):
 
     def _reload_cards(self) -> None:
         cards = CardDB.load(paths.tracker_paths().cache_dir, self.locale, download=not self.offline)
+        if len(cards):
+            GLib.idle_add(lambda: (self._set_cards(cards), False)[1])
         if self.service is not None and len(cards):
             self.service.set_cards(cards)
 
