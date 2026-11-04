@@ -93,7 +93,7 @@ class ArtCache:
     @staticmethod
     def _download(card_id: str, target: Path) -> bool:
         req = urllib.request.Request(ART_URL.format(card_id=card_id),
-                                     headers={"User-Agent": "hearthwatch/0.3"})
+                                     headers={"User-Agent": "hearthwatch/0.4"})
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = resp.read()
         if not data:
