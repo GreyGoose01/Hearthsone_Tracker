@@ -38,6 +38,7 @@ from hearthwatch.ui.widgets import (
     clear,
     pill,
     result_dot,
+    set_board_art,
     stat_tile,
 )
 
@@ -87,6 +88,7 @@ class MainView(Gtk.Stack):
     def __init__(self) -> None:
         super().__init__(transition_type=Gtk.StackTransitionType.CROSSFADE)
         self.add_css_class("hearthwatch-root")
+        set_board_art(False)  # narrow until the window's breakpoint says otherwise
         self.settings = Settings()
         self.waiting = Adw.StatusPage(
             title=_("Waiting for a Battlegrounds game"),
@@ -134,6 +136,10 @@ class MainView(Gtk.Stack):
 
     # -- settings / layout ------------------------------------------------------
     def set_wide(self, wide: bool) -> None:
+        set_board_art(wide)
+        self._signatures.clear()  # rebuild the boards with the new card size
+        if self._state is not None and self._in_game:
+            GLib.idle_add(lambda: (self.update_state(self._state), False)[1])
         self.columns.set_orientation(Gtk.Orientation.HORIZONTAL if wide else Gtk.Orientation.VERTICAL)
         self.columns.set_homogeneous(wide)
 
