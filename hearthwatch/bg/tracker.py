@@ -836,8 +836,10 @@ class BattlegroundsTracker(GameListener):
         for key, ents in lobby.items():
             placed = [e for e in ents if e.int_tag("PLAYER_LEADERBOARD_PLACE") > 0] or ents
             main = _latest(placed, "PLAYER_LEADERBOARD_PLACE")
-            health_e = _latest(ents, "HEALTH", "DAMAGE")
-            armor_e = _latest(ents, "ARMOR")
+            # health and armor from the player's leaderboard entry: combat copies of a hero are
+            # reset after the fight (to 30 health and the hero's starting armor)
+            health_e = _latest(placed, "HEALTH", "DAMAGE")
+            armor_e = _latest(placed, "ARMOR")
             last_board = self._boards.get(key)
             info = OpponentInfo(
                 hero_card_id=hero_base_id(main.card_id),
