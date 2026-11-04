@@ -82,6 +82,10 @@ class BoardSnapshot:
     hero_name: str
     tavern_tier: int
     minions: list[Minion] = field(default_factory=list)
+    # "this game" strength of this player: the Beetles they summon (attack, health; 0 = unknown)
+    # and the extra Attack of their Undead
+    beetle: tuple[int, int] = (0, 0)
+    undead_attack: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -90,6 +94,8 @@ class BoardSnapshot:
             "hero_name": self.hero_name,
             "tavern_tier": self.tavern_tier,
             "minions": [m.to_dict() for m in self.minions],
+            "beetle": list(self.beetle),
+            "undead_attack": self.undead_attack,
         }
 
 

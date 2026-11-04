@@ -375,4 +375,6 @@ DE: dict[str, str] = {
     "Bigger pictures and text in a big window": "Größere Bilder und Schrift in einem großen Fenster",
     "Choosing a hero…": "Heldenwahl …",
     "Your heroes to choose from": "Deine Helden zur Auswahl",
+    "Beetles {attack}/{health}": "Käfer {attack}/{health}",
+    "Undead +{attack} Attack": "Untote +{attack} Angriff",
 }

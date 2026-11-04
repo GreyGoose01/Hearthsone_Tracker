@@ -15,6 +15,10 @@ trap 'rm -rf "$WORK"' EXIT
 git init -q "$WORK/src"
 git -C "$WORK/src" fetch -q --depth 1 "$AUTOTAVERN_REPO" "$AUTOTAVERN_REF"
 git -C "$WORK/src" checkout -q FETCH_HEAD
+# our own small additions (e.g. the set_stats debug command), see packaging/autotavern-*.patch
+for patch in packaging/autotavern-*.patch; do
+    git -C "$WORK/src" apply "$PWD/$patch"
+done
 
 rustup toolchain install "$AUTOTAVERN_RUST" --profile minimal >/dev/null
 # CI keeps the compiled crates between runs here
@@ -35,5 +39,6 @@ with zipfile.ZipFile(wheel) as z:
 PY
 cp "$WORK/src/LICENSE" "$OUT/LICENSE"
 cp "$WORK/src/NOTICE" "$OUT/NOTICE"
-echo "$AUTOTAVERN_REF" > "$OUT/REVISION"
+echo "$AUTOTAVERN_REF" $(for patch in packaging/autotavern-*.patch; do echo "+ $(basename "$patch")"; done) \
+    > "$OUT/REVISION"
 ls -la "$OUT"
