@@ -51,3 +51,15 @@ def test_internal_enchantment_names_become_readable():
     assert buff_name("Spielerverzauberung: Blutedelstein") == "Blutedelstein"
     assert buff_name("Teufelsstärke") == "Teufelsstärke"
     assert is_internal_name("TagTransferPlayerEnchant [DNT]") and not is_internal_name("Teufelsstärke")
+
+
+def test_text_falls_back_to_english(tmp_path):
+    import json
+
+    from hearthwatch.cards import CardDB
+
+    (tmp_path / "de.json").write_text(json.dumps([{"id": "E", "name": "", "type": "ENCHANTMENT"}]))
+    (tmp_path / "en.json").write_text(json.dumps([{"id": "E", "name": "Poet Player Enchant [DNT]",
+                                                   "text": "Keep buffs."}]))
+    db = CardDB.from_file(tmp_path / "de.json", tmp_path / "en.json")
+    assert db.text("E") == "Keep buffs." and db.en_name("E") == "Poet Player Enchant [DNT]"

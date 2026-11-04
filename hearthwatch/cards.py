@@ -130,10 +130,12 @@ class CardInfo:
 
 
 class CardDB:
-    def __init__(self, cards: list[dict] | None = None, en_names: dict[str, str] | None = None) -> None:
+    def __init__(self, cards: list[dict] | None = None, en_names: dict[str, str] | None = None,
+                 en_texts: dict[str, str] | None = None) -> None:
         self._by_id: dict[str, CardInfo] = {}
         self._by_dbf: dict[int, CardInfo] = {}
         self._en: dict[str, str] = dict(en_names or {})
+        self._en_text: dict[str, str] = dict(en_texts or {})
         if cards:
             self._load(cards)
             if en_names is None:
@@ -183,6 +185,11 @@ class CardDB:
         """English name - the simulator's effect registry is keyed by it."""
         return self._en.get(card_id) or self._en.get(hero_base_id(card_id)) or self.name(card_id)
 
+    def text(self, card_id: str) -> str:
+        """Card text in this language; the English one if it has none here."""
+        info = self.get(card_id)
+        return (info.text if info else "") or self._en_text.get(card_id, "")
+
     def races(self, card_id: str) -> tuple[str, ...]:
         info = self.get(card_id)
         return info.races if info else ()
@@ -196,11 +203,13 @@ class CardDB:
     def from_file(cls, path: Path, en_path: Path | None = None) -> "CardDB":
         with path.open(encoding="utf-8") as fh:
             cards = json.load(fh)
-        en_names = None
+        en_names = en_texts = None
         if en_path is not None and en_path != path and en_path.exists():
             with en_path.open(encoding="utf-8") as fh:
-                en_names = {c["id"]: c.get("name", c["id"]) for c in json.load(fh) if "id" in c}
-        return cls(cards, en_names)
+                en_cards = [c for c in json.load(fh) if "id" in c]
+            en_names = {c["id"]: c.get("name", c["id"]) for c in en_cards}
+            en_texts = {c["id"]: c["text"] for c in en_cards if c.get("text")}
+        return cls(cards, en_names, en_texts)
 
     @staticmethod
     def cache_file(cache_dir: Path, locale: str) -> Path:

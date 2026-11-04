@@ -268,8 +268,14 @@ class BattlegroundsTracker(GameListener):
                 result.setdefault(target, []).append(e)
         return result
 
+    def _raw_name(self, card_id: str) -> str:
+        """Card name; the English one when the card has no name in this language
+        (some of the game's internal enchantments)."""
+        name = self.cards.name(card_id)
+        return self.cards.en_name(card_id) if name == card_id else name
+
     def _buff_text(self, enchantment: Entity) -> str:
-        name = buff_name(self.cards.name(enchantment.card_id)) if enchantment.card_id else "?"
+        name = buff_name(self._raw_name(enchantment.card_id)) if enchantment.card_id else "?"
         n1 = enchantment.int_tag("TAG_SCRIPT_DATA_NUM_1")
         n2 = enchantment.int_tag("TAG_SCRIPT_DATA_NUM_2")
         if n1 or n2:
@@ -282,15 +288,15 @@ class BattlegroundsTracker(GameListener):
 
     def _effect_text(self, entity: Entity) -> str:
         """Card text of a minion or enchantment with the values of this entity."""
-        info = self.cards.get(entity.card_id) if entity.card_id else None
-        return card_text(info.text, self._script_values(entity)) if info else ""
+        text = self.cards.text(entity.card_id) if entity.card_id else ""
+        return card_text(text, self._script_values(entity))
 
     def _buff_details(self, enchantments: list[Entity]) -> tuple[list[str], list[str]]:
         """Buff names (same ones grouped as "×n") and what each one does."""
         counts: dict[str, int] = {}
         texts: dict[str, str] = {}
         for e in sorted(enchantments, key=lambda x: x.id):
-            raw = self.cards.name(e.card_id) if e.card_id else ""
+            raw = self._raw_name(e.card_id) if e.card_id else ""
             if is_internal_name(raw) and not self._effect_text(e):
                 continue  # a technical helper of the game, nothing to show
             name = self._buff_text(e)

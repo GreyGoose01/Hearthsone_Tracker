@@ -230,7 +230,7 @@ class MinionChip(Gtk.Box):
             self.add_css_class("compact")
         if m.golden:
             self.add_css_class("golden")
-        art = card_art(m.card_id, 30 if compact else 44)
+        art = card_art(m.card_id, 40 if compact else 64)
         if art is not None:
             self.append(art)
         stats = Gtk.Box(spacing=4, halign=Gtk.Align.CENTER)
@@ -243,9 +243,11 @@ class MinionChip(Gtk.Box):
         for w in (atk, sep, hp):
             stats.append(w)
         self.append(stats)
+        # the full name on up to two lines (ellipsized only if it is longer still)
         name = Gtk.Label(label=("★ " if m.golden else "") + (m.name or m.card_id),
-                         ellipsize=Pango.EllipsizeMode.END, max_width_chars=8 if compact else 11,
-                         width_chars=5)
+                         wrap=True, wrap_mode=Pango.WrapMode.WORD_CHAR, lines=2,
+                         ellipsize=Pango.EllipsizeMode.END, justify=Gtk.Justification.CENTER,
+                         max_width_chars=9 if compact else 12, width_chars=6 if compact else 8)
         name.add_css_class("minion-name")
         self.append(name)
         kws = " · ".join(_(KEYWORD_SHORT.get(k, k)) for k in m.keywords())
