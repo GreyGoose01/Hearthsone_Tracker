@@ -68,8 +68,31 @@ jobs:
           sleep 2
           python3 -m pytest -q
 
+  autotavern:
+    name: autotavern (build)
+    runs-on: ubuntu-24.04
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/.autotavern-target
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache the Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            .autotavern-target
+          key: autotavern-${{ hashFiles('packaging/autotavern.env') }}
+      - name: Build AutoTavern's simulator
+        run: packaging/build-autotavern.sh dist/autotavern
+      - uses: actions/upload-artifact@v4
+        with:
+          name: autotavern
+          path: dist/autotavern
+
   deb:
     name: deb (${{ matrix.image }})
+    needs: autotavern
     runs-on: ubuntu-24.04
     container: ${{ matrix.image }}
     strategy:
@@ -78,18 +101,26 @@ jobs:
         image: ["ubuntu:24.04", "ubuntu:26.04"]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: autotavern
+          path: dist/autotavern
       - name: Build
-        run: packaging/build-deb.sh
+        run: AUTOTAVERN_DIR=dist/autotavern packaging/build-deb.sh
       - name: Install with apt (pulls in the dependencies)
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y ./dist/hearthwatch_*_all.deb
+          DEBIAN_FRONTEND=noninteractive apt-get install -y ./dist/hearthwatch_*.deb
       - name: Run
         run: |
           hearthwatch --version
           hearthwatch --lang en --replay tests/fixtures/bg_game.log --offline
           python3 -c "from hearthwatch.versions import runtime_problems as p; assert not p(), p()"
           test -f /usr/share/icons/hicolor/256x256/apps/io.github.greygoose01.hearthwatch.png
+      - name: AutoTavern simulates from the installed package
+        working-directory: /
+        # -I: import the installed package, not the checkout
+        run: python3 -I "$GITHUB_WORKSPACE/packaging/check_autotavern.py"
       - name: Remove
         run: |
           apt-get remove -y hearthwatch
@@ -97,7 +128,7 @@ jobs:
 
   test:
     if: always()
-    needs: [unit, distro, deb]
+    needs: [unit, distro, autotavern, deb]
     runs-on: ubuntu-24.04
     steps:
       - name: All jobs passed
@@ -105,4 +136,5 @@ jobs:
           echo '${{ toJSON(needs) }}'
           test "${{ needs.unit.result }}" = success
           test "${{ needs.distro.result }}" = success
+          test "${{ needs.autotavern.result }}" = success
           test "${{ needs.deb.result }}" = success

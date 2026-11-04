@@ -518,6 +518,9 @@ class MainView(Gtk.Stack):
         if r.unsupported:
             notes.append(_("rough – not modelled: {cards}").format(cards=", ".join(r.unsupported)))
         self.odds_note.set_text(" · ".join(notes) or _("{runs} simulations").format(runs=r.runs))
+        self.odds_note.set_tooltip_text(
+            _("Simulated with AutoTavern ({runs} combats)").format(runs=r.runs) if r.engine == "autotavern"
+            else _("Built-in simulator – it knows only some card effects"))
         if r.lethal_risk > 0 and c.actual is None:
             self.lethal.set_text(_("Careful: this combat is lethal in {risk:.0%} of the simulations!").format(
                 risk=r.lethal_risk))

@@ -108,7 +108,7 @@ def _cmd_replay(file: Path, simulate: bool, offline: bool, details: bool = False
                 (("win", r.win), ("draw", r.draw), ("loss", r.loss)), key=lambda x: x[1]
             )[0]
             line = "  " + _("Simulation: win {win:.0%}  draw {draw:.0%}  loss {loss:.0%}").format(
-                win=r.win, draw=r.draw, loss=r.loss)
+                win=r.win, draw=r.draw, loss=r.loss) + f"  [{r.engine}]"
             if r.unsupported:
                 line += "  " + _("(not modelled: {cards})").format(cards=", ".join(r.unsupported))
             print(line)

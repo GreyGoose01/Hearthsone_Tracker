@@ -11,8 +11,8 @@ Ein Live-Tracker für den Hearthstone-Modus Schlachtfeld unter Linux. Gemacht f�
 
 - **Nächster Gegner** in der Rekrutierung: Leben, Gasthausstufe, Haupt-Dienertyp, deine Bilanz gegen
   ihn und sein letztes Board.
-- **Gewinnchance** im Kampf aus einem eingebauten Simulator, eine Warnung bei tödlichem Risiko,
-  danach das echte Ergebnis mit Schaden.
+- **Gewinnchance** im Kampf aus [AutoTavern](https://github.com/MCG-NJU/AutoTavern), einem Simulator,
+  der jeden Gasthaus-Diener kennt; eine Warnung bei tödlichem Risiko, danach das echte Ergebnis.
 - **Deine Buffs:** Blutedelsteine, Gasthauszauber, Extra-Gold und dein Board mit allen Buffs.
 - **Diener nach Gasthausstufe:** alle Diener, die in deiner Lobby vorkommen können, nach Dienertyp sortiert.
 - **Lobby** mit Platz, Lebensbalken, Drillingen, Schmuckstücken und dem letzten Board jedes Spielers,
@@ -30,11 +30,11 @@ Arch Linux getestet.
 
 **Ubuntu, Debian, Linux Mint, Pop!_OS:**
 
-Lade `hearthwatch_<version>_all.deb` aus dem
+Lade `hearthwatch_<version>_amd64.deb` aus dem
 [neuesten Release](https://github.com/GreyGoose01/hearthwatch/releases/latest) und installiere es:
 
 ```bash
-sudo apt install ./hearthwatch_*_all.deb
+sudo apt install ./hearthwatch_*.deb
 ```
 
 apt holt GTK und alles Weitere automatisch. Deinstallieren mit `sudo apt remove hearthwatch`.
@@ -97,7 +97,9 @@ in den Einstellungen ein.
 
 ## Grenzen
 
-- Der Simulator kennt noch nicht jeden Karteneffekt. Solche Kämpfe sind als ungenau markiert.
+- Die Gewinnchancen kommen im .deb (x86_64) von AutoTavern. Eine Installation aus dem Quellcode nutzt
+  einen kleineren eingebauten Simulator, außer AutoTavern ist zusätzlich installiert (`pip install` aus
+  dessen Repository).
 - Die MMR steht nicht im Log. Du kannst sie in der Historie selbst eintragen.
 
 ## Entwicklung
@@ -116,7 +118,8 @@ Ablauf mit Branches und Releases: [CONTRIBUTING.md](CONTRIBUTING.md).
 [hearthstone-linux-gui](https://github.com/DawnMagnet/hearthstone-linux-gui) für Hearthstone unter
 Linux, [HearthSim](https://github.com/HearthSim) (`hslog` und Hearthstone Deck Tracker haben den Weg
 durch die Logs gezeigt) und [HearthstoneJSON](https://hearthstonejson.com) für Kartendaten und
--bilder.
+-bilder, sowie [AutoTavern](https://github.com/MCG-NJU/AutoTavern) (MIT) von Changlian Ma und Limin
+Wang für den Kampf-Simulator.
 
 Hearthwatch steht unter der [MIT-Lizenz](LICENSE). Die Grafiken in `data/` und
 `hearthwatch/assets/` gehören zum Projekt und fallen ebenfalls darunter.

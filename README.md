@@ -11,8 +11,8 @@ A live Battlegrounds tracker for Hearthstone on Linux. Made for
 
 - **Next opponent** during recruit: health, tavern tier, main minion type, your record against
   them and their last board.
-- **Combat odds** from a built-in simulator, a warning when a fight could be lethal, then the real
-  result and damage.
+- **Combat odds** from [AutoTavern](https://github.com/MCG-NJU/AutoTavern), a simulator that knows
+  every tavern minion; a warning when a fight could be lethal, then the real result and damage.
 - **Your buffs:** Blood Gems, tavern spells, extra gold and your board with every buff.
 - **Minions by tier:** every tavern minion that can show up in your lobby, grouped by minion type.
 - **Lobby** with places, health bars, triples, trinkets and the last board of every player, plus the
@@ -29,11 +29,11 @@ Arch Linux.
 
 **Ubuntu, Debian, Linux Mint, Pop!_OS:**
 
-Download `hearthwatch_<version>_all.deb` from the
+Download `hearthwatch_<version>_amd64.deb` from the
 [latest release](https://github.com/GreyGoose01/hearthwatch/releases/latest) and install it:
 
 ```bash
-sudo apt install ./hearthwatch_*_all.deb
+sudo apt install ./hearthwatch_*.deb
 ```
 
 apt pulls in GTK and everything else. Uninstall with `sudo apt remove hearthwatch`.
@@ -93,7 +93,8 @@ Battlegrounds game. Language, card art, font size and visible sections are in th
 
 ## Limitations
 
-- The simulator does not know every card effect yet. Such fights are marked as rough.
+- The combat odds come from AutoTavern in the .deb (x86_64). A source install uses a smaller
+  built-in simulator unless AutoTavern is installed too (`pip install` from its repository).
 - MMR is not in the logs. You can type it into the history yourself.
 
 ## Development
@@ -112,7 +113,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch and release workflow.
 Thanks to [hearthstone-linux-gui](https://github.com/DawnMagnet/hearthstone-linux-gui) for
 Hearthstone on Linux, [HearthSim](https://github.com/HearthSim) (`hslog` and Hearthstone Deck
 Tracker showed the way through the logs) and [HearthstoneJSON](https://hearthstonejson.com) for
-card data and art.
+card data and art, and to [AutoTavern](https://github.com/MCG-NJU/AutoTavern) (MIT) by Changlian Ma and
+Limin Wang for the combat simulator.
 
 Hearthwatch is released under the [MIT License](LICENSE). The artwork in `data/` and
 `hearthwatch/assets/` is part of the project and covered by it too.
