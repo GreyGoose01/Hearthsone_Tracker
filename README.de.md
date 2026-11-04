@@ -14,6 +14,7 @@ Ein Live-Tracker für den Hearthstone-Modus Schlachtfeld unter Linux. Gemacht f�
 - **Gewinnchance** im Kampf aus einem eingebauten Simulator, eine Warnung bei tödlichem Risiko,
   danach das echte Ergebnis mit Schaden.
 - **Deine Buffs:** Blutedelsteine, Gasthauszauber, Extra-Gold und dein Board mit allen Buffs.
+- **Diener nach Gasthausstufe:** alle Diener, die in deiner Lobby vorkommen können, nach Dienertyp sortiert.
 - **Lobby** mit Platz, Lebensbalken und dem letzten Board jedes Spielers.
 - **Zusammenfassung** am Spielende und eine **Historie** mit Statistik pro Held.
 

@@ -40,6 +40,13 @@ def _gtk():
     return Gtk, GLib
 
 
+def _children(widget):
+    child = widget.get_first_child()
+    while child is not None:
+        yield child
+        child = child.get_next_sibling()
+
+
 def _replay(bg_log, cards):
     states, combats, results = [], [], []
     tracker = BattlegroundsTracker(cards, states.append, combats.append, results.append)
@@ -51,13 +58,14 @@ def _replay(bg_log, cards):
 
 
 @pytest.mark.parametrize("language", ["de", "en"])
-def test_all_windows_build(bg_log, cards, tmp_path, language):
+def test_all_windows_build(bg_log, cards, pool_cards, tmp_path, language):
     Gtk, GLib = _gtk()
     from hearthwatch import i18n, versions
     from hearthwatch.db import MatchDB
     from hearthwatch.settings import Settings
     from hearthwatch.ui.history_page import HistoryPage
     from hearthwatch.ui.main_view import MainView
+    from hearthwatch.ui.minions_window import MinionsPage
     from hearthwatch.ui.settings_window import SettingsDialog
     from hearthwatch.ui.widgets import install_css, set_font_scale
 
@@ -86,6 +94,13 @@ def test_all_windows_build(bg_log, cards, tmp_path, language):
     db = MatchDB(tmp_path / "matches.db")
     db.add(results[0])
     HistoryPage(db)
+    minions = MinionsPage()
+    minions.update_state(None)
+    minions.set_cards(pool_cards)
+    minions.update_state(live)
+    for button in list(_children(minions.tier_buttons))[-1:]:
+        button.set_active(True)
+
     changes = []
     SettingsDialog(Settings(), changes.append)
     win = Gtk.Window(child=view)

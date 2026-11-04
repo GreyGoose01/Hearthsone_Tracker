@@ -78,6 +78,8 @@ CSS = """
 .lethal { border-radius: 10px; padding: 8px 12px; font-weight: 800;
           background: @error_bg_color; color: @error_fg_color; }
 .last-line { font-size: 0.9em; }
+.pool-card { padding: 8px; }
+.pool-text { font-size: 0.8em; opacity: 0.85; }
 statuspage.mascot image.icon { -gtk-icon-size: 220px; }
 """
 

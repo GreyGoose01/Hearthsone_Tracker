@@ -150,7 +150,7 @@ DE: dict[str, str] = {
     "Naga": "Naga",
     "Pirate": "Pirat",
     "Quilboar": "Stacheleber",
-    "Undead": "Untoter",
+    "Undead": "Untot",
     "All": "Alle",
 
     # --- combat results, keywords, widgets ---
@@ -344,4 +344,17 @@ DE: dict[str, str] = {
     # --- version check ---
     "{name} {have} is too old, Hearthwatch needs {need} or newer.":
         "{name} {have} ist zu alt, Hearthwatch braucht {need} oder neuer.",
+    "Aberration": "Abscheulichkeit",
+
+    # --- minion browser ---
+    "Minions by tier": "Diener nach Gasthausstufe",
+    "No card data yet – it is downloaded at the first start.":
+        "Noch keine Kartendaten – sie werden beim ersten Start heruntergeladen.",
+    "Tavern tier {tier}": "Gasthausstufe {tier}",
+    "your tier": "deine Stufe",
+    "Not in a game: all minions are shown.": "Kein laufendes Spiel: alle Diener werden gezeigt.",
+    "Minion types in this lobby: {types}": "Dienertypen in dieser Lobby: {types}",
+    "Not all minion types are known yet – faded types may not be in this game.":
+        "Noch nicht alle Dienertypen bekannt – blasse Typen sind vielleicht nicht im Spiel.",
+    "Neutral": "Neutral",
 }

@@ -104,7 +104,7 @@ def test_live_state_during_game(bg_log, cards):
     assert s.next_opponent == "BG_HERO_E"  # lobby player id 5, no card data -> id
     assert len(s.opponents) == 8
     assert sum(o.is_me for o in s.opponents) == 1
-    assert sorted(s.tribes_banned) == ["DRAGON", "ELEMENTAL", "NAGA", "QUILBOAR", "UNDEAD"]
+    assert sorted(s.tribes_banned) == ["ABERRATION", "DRAGON", "ELEMENTAL", "NAGA", "QUILBOAR", "UNDEAD"]
 
 
 def test_names_are_fixed_when_card_data_arrives_later(bg_log, cards):

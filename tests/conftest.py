@@ -33,3 +33,21 @@ def german():
     i18n.set_language("de")
     yield
     i18n.set_language("en")
+
+
+@pytest.fixture
+def pool_cards() -> CardDB:
+    """A tiny tavern pool: neutral, single and dual types, a duos-only and a non-pool card."""
+    def m(cid, name, tier, races=(), **extra):
+        return {"id": cid, "dbfId": abs(hash(cid)) % 100000, "name": name, "type": "MINION", "races": list(races),
+                "techLevel": tier, "attack": tier, "health": tier, "isBattlegroundsPoolMinion": True, **extra}
+    return CardDB([
+        m("P_NEUTRAL", "Zauberlehrling", 1),
+        m("P_BEAST1", "Alleykatze", 1, ["BEAST"]),
+        m("P_DEMON1", "Wichtel", 1, ["DEMON"]),
+        m("P_DUAL", "Mischling", 2, ["BEAST", "UNDEAD"]),
+        m("P_NAGA", "Seelenfänger", 2, ["NAGA"]),
+        m("P_ALL", "Amalgam", 3, ["ALL"]),
+        m("P_DUOS", "Duo-Diener", 1, ["BEAST"], isBattlegroundsDuosExclusive=True),
+        {"id": "P_TOKEN", "name": "Token", "type": "MINION", "races": ["BEAST"], "techLevel": 1},
+    ])

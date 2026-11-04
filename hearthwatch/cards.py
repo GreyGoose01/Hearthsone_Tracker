@@ -1,7 +1,7 @@
 """Card data from HearthstoneJSON (https://hearthstonejson.com).
 
 The full card list is downloaded once, reduced to the fields the tracker
-needs and cached in ``~/.cache/hearthwatch/cards-<locale>.json``. Everything
+needs and cached in ``~/.cache/hearthwatch/cards-<locale>-v<N>.json``. Everything
 works without card data too: names then fall back to card IDs and tribes to
 the ``CARDRACE`` tag from the log.
 """
@@ -22,10 +22,11 @@ log = logging.getLogger(__name__)
 
 CARDS_URL = "https://api.hearthstonejson.com/v1/latest/{locale}/cards.json"
 MAX_AGE = 3 * 24 * 3600  # refresh after a few days (patches)
+CACHE_VERSION = 2  # bump when _KEEP changes, so old caches are downloaded again
 
 BG_TRIBES = (
     "BEAST", "DEMON", "DRAGON", "ELEMENTAL", "MECHANICAL",
-    "MURLOC", "NAGA", "PIRATE", "QUILBOAR", "UNDEAD",
+    "MURLOC", "NAGA", "PIRATE", "QUILBOAR", "UNDEAD", "ABERRATION",
 )
 
 TRIBE_NAMES = {
@@ -39,6 +40,7 @@ TRIBE_NAMES = {
     "PIRATE": N_("Pirate"),
     "QUILBOAR": N_("Quilboar"),
     "UNDEAD": N_("Undead"),
+    "ABERRATION": N_("Aberration"),
     "ALL": N_("All"),
 }
 
@@ -49,10 +51,31 @@ def tribe_name(tribe: str) -> str:
         return ""
     return _(TRIBE_NAMES[tribe]) if tribe in TRIBE_NAMES else tribe.title()
 
+
+_TAG_RE = re.compile(r"</?[a-zA-Z][^>]*>")
+
+
+def card_text(text: str) -> str:
+    """Card text as plain text: no markup, no layout markers, one line."""
+    if not text:
+        return ""
+    text = text.split("@", 1)[0]  # "@" starts an alternative text the game swaps in
+    text = _TAG_RE.sub("", text).replace("[x]", "")
+    text = re.sub(r"\[[a-z]\]", "", text)  # grammar markers, e.g. "Gasthaus[d]zauber"
+    text = re.sub(r"\|4\(([^,()]*),\s*([^()]*)\)", r"\2", text)  # "|4(Zug, Züge)" -> plural
+    text = re.sub(r"\{\d+\}", "X", text)  # values the game fills in during a match
+    text = re.sub(r"[$#](\d)", r"\1", text)  # $3 / #3: spell damage / healing markers
+    text = text.replace("_", " ").replace("\n", " ")
+    text = re.sub(r"\s+", " ", text).strip()
+    if text.count("(") > text.count(")"):  # "(" whose ")" was in the alternative text
+        text = text[:text.rindex("(")].rstrip()
+    return text
+
+
 _KEEP = (
     "id", "dbfId", "name", "type", "race", "races", "techLevel", "attack", "health",
     "mechanics", "text", "isBattlegroundsPoolMinion", "battlegroundsPremiumDbfId",
-    "battlegroundsNormalDbfId",
+    "battlegroundsNormalDbfId", "isBattlegroundsDuosExclusive",
 )
 
 _SKIN_RE = re.compile(r"_SKIN_[A-Z0-9]+$")
@@ -74,11 +97,15 @@ class CardInfo:
     health: int = 0
     mechanics: frozenset[str] = field(default_factory=frozenset)
     text: str = ""
+    dbf_id: int = 0
+    bg_pool: bool = False  # minion in the Battlegrounds tavern pool
+    duos_only: bool = False
 
 
 class CardDB:
     def __init__(self, cards: list[dict] | None = None, en_names: dict[str, str] | None = None) -> None:
         self._by_id: dict[str, CardInfo] = {}
+        self._by_dbf: dict[int, CardInfo] = {}
         self._en: dict[str, str] = dict(en_names or {})
         if cards:
             self._load(cards)
@@ -104,10 +131,22 @@ class CardDB:
                 health=int(raw.get("health") or 0),
                 mechanics=frozenset(raw.get("mechanics") or ()),
                 text=raw.get("text") or "",
+                dbf_id=int(raw.get("dbfId") or 0),
+                bg_pool=bool(raw.get("isBattlegroundsPoolMinion")),
+                duos_only=bool(raw.get("isBattlegroundsDuosExclusive")),
             )
+            if self._by_id[cid].dbf_id:
+                self._by_dbf[self._by_id[cid].dbf_id] = self._by_id[cid]
 
     def get(self, card_id: str) -> CardInfo | None:
         return self._by_id.get(card_id) or self._by_id.get(hero_base_id(card_id))
+
+    def by_dbf(self, dbf_id: int) -> CardInfo | None:
+        return self._by_dbf.get(dbf_id)
+
+    def bg_minions(self) -> list[CardInfo]:
+        """All minions of the Battlegrounds tavern pool."""
+        return [c for c in self._by_id.values() if c.bg_pool and c.tech_level > 0]
 
     def name(self, card_id: str) -> str:
         info = self.get(card_id)
@@ -137,9 +176,13 @@ class CardDB:
         return cls(cards, en_names)
 
     @staticmethod
+    def cache_file(cache_dir: Path, locale: str) -> Path:
+        return cache_dir / f"cards-{locale}-v{CACHE_VERSION}.json"
+
+    @staticmethod
     def cache_age(cache_dir: Path, locale: str = "deDE") -> float | None:
         """Seconds since the card data for ``locale`` was downloaded (None: no cache)."""
-        cache = cache_dir / f"cards-{locale}.json"
+        cache = CardDB.cache_file(cache_dir, locale)
         try:
             return time.time() - cache.stat().st_mtime
         except OSError:
@@ -157,7 +200,7 @@ class CardDB:
         simulator matches card effects by English name.
         """
         locales = ["enUS"] if locale == "enUS" else [locale, "enUS"]
-        files = {loc: cache_dir / f"cards-{loc}.json" for loc in locales}
+        files = {loc: cls.cache_file(cache_dir, loc) for loc in locales}
         for loc, cache in files.items():
             fresh = cache.exists() and time.time() - cache.stat().st_mtime < MAX_AGE
             if download and (force or not fresh):

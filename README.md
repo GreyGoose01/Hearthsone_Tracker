@@ -14,6 +14,7 @@ A live Battlegrounds tracker for Hearthstone on Linux. Made for
 - **Combat odds** from a built-in simulator, a warning when a fight could be lethal, then the real
   result and damage.
 - **Your buffs:** Blood Gems, tavern spells, extra gold and your board with every buff.
+- **Minions by tier:** every tavern minion that can show up in your lobby, grouped by minion type.
 - **Lobby** with places, health bars and the last board of every player.
 - **Summary** at the end of a game, plus a **history** with stats per hero.
 
