@@ -22,6 +22,7 @@ class SimResult:
     avg_damage_taken: float  # average over losses
     lethal_risk: float  # share of runs in which the player would die
     unsupported: list[str] = field(default_factory=list)
+    engine: str = "builtin"  # "autotavern" when AutoTavern simulated the combat
 
     @property
     def exact(self) -> bool:
@@ -84,7 +85,17 @@ def simulate(
 
 
 def simulate_combat(snapshot: CombatSnapshot, player_health: int | None = None,
-                    en_names: Callable[[str], str] | None = None, **kw) -> SimResult:
+                    en_names: Callable[[str], str] | None = None, builtin: bool = False,
+                    **kw) -> SimResult:
+    """Odds for a combat: AutoTavern when available (much more accurate), else
+    the built-in simulator. ``builtin=True`` forces the built-in one."""
+    if not builtin:
+        from hearthwatch.sim import autotavern
+
+        result = autotavern.simulate_combat(snapshot, player_health=player_health,
+                                            runs=kw.get("runs", 2000))
+        if result is not None:
+            return result
     return simulate(
         snapshot.player.minions,
         snapshot.opponent.minions,

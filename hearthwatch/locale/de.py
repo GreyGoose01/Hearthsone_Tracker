@@ -369,4 +369,6 @@ DE: dict[str, str] = {
     "Not in this lobby: {types}": "Nicht in dieser Lobby: {types}",
     "Hearthstone was not found. Install it with hearthstone-linux-gui.":
         "Hearthstone wurde nicht gefunden. Installiere es mit hearthstone-linux-gui.",
+    "Simulated with AutoTavern ({runs} combats)": "Simuliert mit AutoTavern ({runs} Kämpfe)",
+    "Built-in simulator – it knows only some card effects": "Eingebauter Simulator – kennt nur einen Teil der Karteneffekte",
 }

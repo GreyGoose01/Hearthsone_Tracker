@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# Builds dist/hearthwatch_<version>_all.deb - pure Python, nothing to compile.
+# Builds dist/hearthwatch_<version>_<arch>.deb.
 #   packaging/build-deb.sh
-# Install it with: sudo apt install ./dist/hearthwatch_<version>_all.deb
+#   AUTOTAVERN_DIR=dist/autotavern packaging/build-deb.sh   (with the AutoTavern simulator,
+#                                                            see packaging/build-autotavern.sh)
+# Without AutoTavern the package is pure Python ("all"); with it, it is built for
+# this machine's architecture. Install it with: sudo apt install ./dist/hearthwatch_*.deb
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -9,14 +12,28 @@ VERSION=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' hearthwatch/__init__.py)
 APP_ID=io.github.greygoose01.hearthwatch
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
-PKG="$WORK/hearthwatch_${VERSION}_all"
+ARCH=all
+DEPENDS="python3 (>= 3.12), python3-gi, gir1.2-gtk-4.0 (>= 4.12), gir1.2-adw-1 (>= 1.4)"
+if [ -n "${AUTOTAVERN_DIR:-}" ]; then
+    ARCH=$(dpkg --print-architecture)
+    DEPENDS="$DEPENDS, libc6 (>= 2.34), libgcc-s1"
+fi
+PKG="$WORK/hearthwatch_${VERSION}_${ARCH}"
 SITE="$PKG/usr/lib/python3/dist-packages"
 SHARE="$PKG/usr/share"
 
 mkdir -p "$PKG/DEBIAN" "$PKG/usr/bin" "$SITE" "$SHARE/applications" \
          "$SHARE/icons/hicolor/256x256/apps" "$SHARE/metainfo" "$SHARE/doc/hearthwatch"
 
-tar --exclude='__pycache__' --exclude='*.pyc' -cf - hearthwatch | tar -xf - -C "$SITE"
+tar --exclude='__pycache__' --exclude='*.pyc' --exclude='hearthwatch/_vendor' -cf - hearthwatch | tar -xf - -C "$SITE"
+if [ -n "${AUTOTAVERN_DIR:-}" ]; then
+    VENDOR="$SITE/hearthwatch/_vendor/taverngym_core"
+    mkdir -p "$VENDOR"
+    printf '"""Bundled third-party code."""\n' > "$SITE/hearthwatch/_vendor/__init__.py"
+    printf '"""AutoTavern (MIT, github.com/MCG-NJU/AutoTavern) - its compiled simulator only."""\n' \
+        > "$VENDOR/__init__.py"
+    cp "$AUTOTAVERN_DIR/_core.abi3.so" "$VENDOR/_core.abi3.so"
+fi
 cat > "$PKG/usr/bin/hearthwatch" <<'EOF'
 #!/usr/bin/python3
 import sys
@@ -30,14 +47,22 @@ cp "data/$APP_ID.png" "$SHARE/icons/hicolor/256x256/apps/$APP_ID.png"
 cp "data/$APP_ID.metainfo.xml" "$SHARE/metainfo/$APP_ID.metainfo.xml"
 cp README.md README.de.md LICENSE "$SHARE/doc/hearthwatch/"
 cp LICENSE "$SHARE/doc/hearthwatch/copyright"
+if [ -n "${AUTOTAVERN_DIR:-}" ]; then
+    {
+        printf '\n\nThis package includes AutoTavern (TavernGym), revision %s:\n\n' "$(cat "$AUTOTAVERN_DIR/REVISION")"
+        cat "$AUTOTAVERN_DIR/LICENSE"
+        printf '\n'
+        cat "$AUTOTAVERN_DIR/NOTICE"
+    } >> "$SHARE/doc/hearthwatch/copyright"
+fi
 
 cat > "$PKG/DEBIAN/control" <<EOF
 Package: hearthwatch
 Version: $VERSION
 Section: games
 Priority: optional
-Architecture: all
-Depends: python3 (>= 3.12), python3-gi, gir1.2-gtk-4.0 (>= 4.12), gir1.2-adw-1 (>= 1.4)
+Architecture: $ARCH
+Depends: $DEPENDS
 Installed-Size: $(du -sk "$PKG/usr" | cut -f1)
 Maintainer: GreyGoose01 <GreyGoose01@users.noreply.github.com>
 Homepage: https://github.com/GreyGoose01/hearthwatch
@@ -65,5 +90,5 @@ find "$PKG" -type f -exec chmod 644 {} +
 chmod 755 "$PKG/usr/bin/hearthwatch" "$PKG/DEBIAN/postinst" "$PKG/DEBIAN/prerm"
 
 mkdir -p dist
-dpkg-deb --root-owner-group -Zxz --build "$PKG" "dist/hearthwatch_${VERSION}_all.deb" >/dev/null
-echo "dist/hearthwatch_${VERSION}_all.deb"
+dpkg-deb --root-owner-group -Zxz --build "$PKG" "dist/hearthwatch_${VERSION}_${ARCH}.deb" >/dev/null
+echo "dist/hearthwatch_${VERSION}_${ARCH}.deb"
