@@ -364,3 +364,70 @@ def test_summary_names_are_fixed_when_card_data_arrives(bg_log, cards):
     tracker.relabel()
     assert tracker.state.summary.hero_name == "Held A"
     assert tracker.state.summary.final_board[0].name == "Wildschwein"
+
+
+def _hero_select_lines(picked: bool) -> list[str]:
+    p = "D 20:00:00.0 PowerTaskList.DebugPrintPower() - "
+
+    def hero(eid, card, zone, player, *tags):
+        out = [p + f"FULL_ENTITY - Updating [entityName={card} id={eid} zone={zone} zonePos=0 cardId={card} "
+                   f"player={player}] CardID={card}",
+               p + f"    tag=CONTROLLER value={player}", p + "    tag=CARDTYPE value=HERO",
+               p + f"    tag=ZONE value={zone}", p + "    tag=HEALTH value=30"]
+        return out + [p + f"    tag={t} value={v}" for t, v in tags]
+
+    lines = [
+        "D 20:00:00.0 GameState.DebugPrintPower() - CREATE_GAME",
+        "D 20:00:00.0 GameState.DebugPrintGame() - GameType=GT_BATTLEGROUNDS",
+        p + "CREATE_GAME",
+        p + "    GameEntity EntityID=1",
+        p + "        tag=TURN value=0",
+        p + "    Player EntityID=2 PlayerID=5 GameAccountId=[hi=1 lo=2]",
+        p + "        tag=CONTROLLER value=5",
+        p + "        tag=CARDTYPE value=PLAYER",
+        p + "    Player EntityID=3 PlayerID=13 GameAccountId=[hi=0 lo=0]",
+        p + "        tag=CONTROLLER value=13",
+        p + "        tag=CARDTYPE value=PLAYER",
+        p + "        tag=BACON_DUMMY_PLAYER value=1",
+        *hero(10, "TB_BaconShop_HERO_PH", "PLAY", 5),
+        p + "TAG_CHANGE Entity=2 tag=HERO_ENTITY value=10",
+        *hero(11, "BG_HERO_A", "HAND", 5),
+        *hero(12, "BG_HERO_B", "HAND", 5),
+        # an opponent who already picked: every hero is "first" before round 1
+        *hero(20, "BG_HERO_C", "SETASIDE", 13, ("PLAYER_ID", 3), ("PLAYER_LEADERBOARD_PLACE", 1)),
+        p + "TAG_CHANGE Entity=20 tag=ARMOR value=5",
+    ]
+    if picked:
+        lines += [p + "TAG_CHANGE Entity=2 tag=HERO_ENTITY value=11",
+                  p + "TAG_CHANGE Entity=11 tag=ZONE value=PLAY",
+                  p + "TAG_CHANGE Entity=12 tag=ZONE value=SETASIDE"]
+    return lines
+
+
+def test_hero_selection_shows_the_offered_heroes_not_the_placeholder(cards):
+    states = []
+    tracker = BattlegroundsTracker(cards, states.append)
+    game = GameState([tracker])
+    for line in _hero_select_lines(picked=False):
+        game.feed_line(line)
+        tracker.batch_done(game)
+    tracker.flush()
+    s = states[-1]
+    assert s.choosing_hero
+    assert s.hero_name == "" and s.hero_card_id == ""
+    assert s.hero_options == [("BG_HERO_A", "Held A"), ("BG_HERO_B", "BG_HERO_B")]  # B: not in the card data
+    assert [(o.hero_name, o.place) for o in s.opponents] == [("Held C", 0)]
+
+
+def test_hero_selection_ends_when_you_pick(cards):
+    states = []
+    tracker = BattlegroundsTracker(cards, states.append)
+    game = GameState([tracker])
+    for line in _hero_select_lines(picked=True):
+        game.feed_line(line)
+        tracker.batch_done(game)
+    tracker.flush()
+    s = states[-1]
+    assert not s.choosing_hero and s.hero_options == []
+    assert s.hero_name == "Held A"
+    assert s.place == 0

@@ -113,6 +113,11 @@ def hero_base_id(card_id: str) -> str:
     return _SKIN_RE.sub("", card_id)
 
 
+def is_placeholder_hero(card_id: str) -> bool:
+    """The stand-in hero (Bob, ``TB_BaconShop_HERO_PH``) you have while picking a hero."""
+    return hero_base_id(card_id).startswith("TB_BaconShop_HERO_PH")
+
+
 @dataclass(frozen=True)
 class CardInfo:
     id: str

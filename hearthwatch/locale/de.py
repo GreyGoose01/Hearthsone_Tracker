@@ -373,4 +373,6 @@ DE: dict[str, str] = {
     "Built-in simulator – it knows only some card effects": "Eingebauter Simulator – kennt nur einen Teil der Karteneffekte",
     "Grow with the window": "Mit dem Fenster wachsen",
     "Bigger pictures and text in a big window": "Größere Bilder und Schrift in einem großen Fenster",
+    "Choosing a hero…": "Heldenwahl …",
+    "Your heroes to choose from": "Deine Helden zur Auswahl",
 }

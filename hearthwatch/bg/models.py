@@ -179,6 +179,8 @@ class LiveState:
     player_buff_texts: list[str] = field(default_factory=list)  # what each player buff does
     player_buffs: list[str] = field(default_factory=list)  # game-wide buffs, e.g. "Blood Gems +2/+1"
     counters: list[str] = field(default_factory=list)  # e.g. "Gold next turn +2"
+    choosing_hero: bool = False  # hero selection at the start of the game
+    hero_options: list[tuple[str, str]] = field(default_factory=list)  # (card id, name) to pick from
 
 
 @dataclass
