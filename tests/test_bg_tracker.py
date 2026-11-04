@@ -336,3 +336,17 @@ def test_lobby_types_come_from_single_type_pool_minions(pool_cards):
         t._note_tribes(Entity(1, cid, {"CARDRACE": "BEAST"}))
     # dual type (Beast/Undead) and the token (not in the pool) teach nothing
     assert t._tribes_seen == {"BEAST", "NAGA"}
+
+
+def test_internal_helper_enchantments_are_hidden_or_renamed(cards):
+    from hearthwatch.cards import CardDB
+    from hearthwatch.power.entities import Entity
+
+    db = CardDB([
+        {"id": "E_POET", "name": "Persistent Poet Player Enchant [DNT]", "type": "ENCHANTMENT",
+         "text": "Adjacent minions keep your enchantments."},
+        {"id": "E_TECH", "name": "TagTransferPlayerEnchant [DNT]", "type": "ENCHANTMENT"},
+    ])
+    t = BattlegroundsTracker(db, lambda s: None, lambda c: None, lambda r: None)
+    names, texts = t._buff_details([Entity(1, "E_POET"), Entity(2, "E_TECH")])
+    assert names == ["Persistent Poet"] and texts == ["Adjacent minions keep your enchantments."]

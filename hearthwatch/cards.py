@@ -53,6 +53,25 @@ def tribe_name(tribe: str) -> str:
 
 
 _TAG_RE = re.compile(r"</?[a-zA-Z][^>]*>")
+_INTERNAL_RE = re.compile(r"\s*[\[(]DNT[\])]\s*")
+_ENCHANT_SUFFIX_RE = re.compile(r"\s+Player\s+Ench(ant(ment)?)?\b.*$|\s+Ench(ant(ment)?)?$", re.I)
+
+
+def is_internal_name(name: str) -> bool:
+    """Blizzard's internal helper cards are marked "[DNT]" (do not translate)."""
+    return bool(_INTERNAL_RE.search(name or ""))
+
+
+def buff_name(name: str) -> str:
+    """Readable name of an enchantment: without "[DNT]" and "Player Enchant" parts.
+
+    "Persistent Poet Player Enchant [DNT]" -> "Persistent Poet",
+    "Spielerverzauberung: Blutedelstein" -> "Blutedelstein".
+    """
+    text = _INTERNAL_RE.sub(" ", name or "").strip()
+    text = re.sub(r"^Spielerverzauberung:\s*", "", text)
+    text = text.replace("_", " ")
+    return _ENCHANT_SUFFIX_RE.sub("", text).strip() or (name or "").strip()
 
 
 def card_text(text: str, values: tuple[int, ...] | list[int] = ()) -> str:

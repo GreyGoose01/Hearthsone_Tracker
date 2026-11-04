@@ -40,3 +40,14 @@ def test_card_text_drops_game_placeholders():
     raw = "Verleiht +{0}/+{1}, wenn Ihr einen Gasthaus[d]zauber wirkt. {0} |4(Zug, Züge) früher.@(Noch {0}!)"
     assert card_text(raw) == "Verleiht +X/+X, wenn Ihr einen Gasthauszauber wirkt. X Züge früher."
     assert card_text("Kostet Leben statt Gold. (@Noch {0}!)") == "Kostet Leben statt Gold."
+
+
+def test_internal_enchantment_names_become_readable():
+    from hearthwatch.cards import buff_name, is_internal_name
+
+    assert buff_name("Persistent Poet Player Enchant [DNT]") == "Persistent Poet"
+    assert buff_name("Blood Gem Player Enchant (DNT)") == "Blood Gem"
+    assert buff_name("Buddy Player Enchantment [DNT]") == "Buddy"
+    assert buff_name("Spielerverzauberung: Blutedelstein") == "Blutedelstein"
+    assert buff_name("Teufelsstärke") == "Teufelsstärke"
+    assert is_internal_name("TagTransferPlayerEnchant [DNT]") and not is_internal_name("Teufelsstärke")

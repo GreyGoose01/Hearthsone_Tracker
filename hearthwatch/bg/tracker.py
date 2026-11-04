@@ -33,7 +33,7 @@ from hearthwatch.bg.models import (
     Minion,
     OpponentInfo,
 )
-from hearthwatch.cards import BG_TRIBES, CardDB, card_text, hero_base_id
+from hearthwatch.cards import BG_TRIBES, CardDB, buff_name, card_text, hero_base_id, is_internal_name
 from hearthwatch.power.entities import Entity
 from hearthwatch.power.game_state import GameListener, GameState
 from hearthwatch.i18n import N_, _
@@ -269,7 +269,7 @@ class BattlegroundsTracker(GameListener):
         return result
 
     def _buff_text(self, enchantment: Entity) -> str:
-        name = self.cards.name(enchantment.card_id) if enchantment.card_id else "?"
+        name = buff_name(self.cards.name(enchantment.card_id)) if enchantment.card_id else "?"
         n1 = enchantment.int_tag("TAG_SCRIPT_DATA_NUM_1")
         n2 = enchantment.int_tag("TAG_SCRIPT_DATA_NUM_2")
         if n1 or n2:
@@ -290,6 +290,9 @@ class BattlegroundsTracker(GameListener):
         counts: dict[str, int] = {}
         texts: dict[str, str] = {}
         for e in sorted(enchantments, key=lambda x: x.id):
+            raw = self.cards.name(e.card_id) if e.card_id else ""
+            if is_internal_name(raw) and not self._effect_text(e):
+                continue  # a technical helper of the game, nothing to show
             name = self._buff_text(e)
             counts[name] = counts.get(name, 0) + 1
             texts.setdefault(name, self._effect_text(e))
