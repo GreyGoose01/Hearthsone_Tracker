@@ -77,3 +77,12 @@ def test_unknown_deathrattle_is_reported():
 def test_lethal_risk():
     res = simulate([m(1, 1)], [m(5, 5, tech_level=6)], 1, 6, runs=20, seed=8, player_health=10)
     assert res.loss == 1.0 and res.lethal_risk == 1.0
+
+
+def test_damage_cap_limits_damage_and_lethal_risk():
+    # 6 tier-6 minions against an empty board: 6 + 6*6 = 42 damage without the cap
+    big = [m(10, 10, tech_level=6) for _ in range(6)]
+    uncapped = simulate([], big, 1, 6, runs=20, seed=1, player_health=20)
+    assert uncapped.avg_damage_taken == 42 and uncapped.lethal_risk == 1.0
+    capped = simulate([], big, 1, 6, runs=20, seed=1, player_health=20, damage_cap=15)
+    assert capped.avg_damage_taken == 15 and capped.lethal_risk == 0.0

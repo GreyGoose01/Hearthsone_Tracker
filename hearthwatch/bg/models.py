@@ -116,6 +116,7 @@ class CombatSnapshot:
     opponent: BoardSnapshot
     opponent_player_id: int = 0  # lobby PLAYER_ID of the opponent
     actual: CombatOutcome | None = None  # filled in when the combat is over
+    damage_cap: int = 0  # most hero damage this combat can deal (0 = no cap)
 
 
 @dataclass

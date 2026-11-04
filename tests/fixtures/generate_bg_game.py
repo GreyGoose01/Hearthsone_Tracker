@@ -23,6 +23,7 @@ What it contains (and what the tests rely on):
   to 3/3 by an enchantment.
   E also makes a triple and gets a trinket; our trinket uses the numeric tag
   id 3741. The game entity carries an anomaly (BACON_GLOBAL_ANOMALY_DBID).
+  The game entity carries the early damage cap (5, enabled).
 * Game over: placement 3.
 """
 
@@ -85,6 +86,8 @@ def build() -> list[str]:
     p("tag=TURN value=0", 2)
     p("tag=STATE value=RUNNING", 2)
     p("tag=BACON_GLOBAL_ANOMALY_DBID value=90001", 2)
+    p("tag=BACON_COMBAT_DAMAGE_CAP value=5", 2)
+    p("tag=BACON_COMBAT_DAMAGE_CAP_ENABLED value=1", 2)
     p(f"Player EntityID=2 PlayerID={ME} GameAccountId=[hi=144115198130930503 lo=12345678]", 1)
     p(f"tag=CONTROLLER value={ME}", 2)
     p("tag=CARDTYPE value=PLAYER", 2)
