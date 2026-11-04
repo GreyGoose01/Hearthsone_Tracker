@@ -267,12 +267,14 @@ def set_ui_scale(factor: float) -> None:
     set_font_scale(_user_font)
 
 
-def scale_for_width(width: int, wide: bool) -> float:
+def scale_for_width(width: int, wide: bool, single_column: bool = False) -> float:
     """How much bigger than normal everything may be at this window width: 1.0 up to
-    a comfortable width (about 1100 px wide, 480 px narrow), then growing in 10 %
-    steps, at most 1.6."""
-    # very wide windows (lobby boards beside the players) start growing later
-    base = (1600 if width >= 1500 else 1100) if wide else 480
+    a comfortable width (about 1100 px wide, 480 px narrow, 800 px for a page with a
+    single column like the summary), then growing in 10 % steps, at most 1.6."""
+    if single_column:
+        base = 800
+    else:  # very wide windows (lobby boards beside the players) start growing later
+        base = (1600 if width >= 1500 else 1100) if wide else 480
     factor = max(1.0, min(1.6, width / base))
     return round(factor * 10) / 10
 

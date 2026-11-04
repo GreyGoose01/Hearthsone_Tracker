@@ -132,7 +132,8 @@ class MainView(Gtk.Stack):
         self._build_lobby()
 
         self.summary_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
-        summary_clamp = Adw.Clamp(maximum_size=1500, tightening_threshold=1100, child=self.summary_box,
+        # the summary grows with the window too (see scale_for_width), so it may get wide
+        summary_clamp = Adw.Clamp(maximum_size=2400, tightening_threshold=1800, child=self.summary_box,
                                   margin_top=12, margin_bottom=18, margin_start=12, margin_end=12)
         self.add_named(Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.AUTOMATIC,
                                           child=summary_clamp), "summary")
@@ -173,7 +174,9 @@ class MainView(Gtk.Stack):
     def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
         Gtk.Stack.do_size_allocate(self, width, height, baseline)
         self._width = width
-        target = scale_for_width(width, self._wide) if self.settings.scale_with_window else 1.0
+        summary = self.get_visible_child_name() == "summary"
+        target = (scale_for_width(width, self._wide, single_column=summary)
+                  if self.settings.scale_with_window else 1.0)
         xwide = self._wide and width >= XWIDE
         if xwide != self._xwide:
             self._xwide = xwide
@@ -394,6 +397,9 @@ class MainView(Gtk.Stack):
             self._predictions.clear()
             self._signatures.clear()
             self._reset_combat()
+        if self.get_visible_child_name() != "game":
+            self._target = None  # the live page grows by its own measure
+            self.queue_allocate()
         self.set_visible_child_name("game")
         self._update_header(s)
         self._update_focus(s)
@@ -851,6 +857,9 @@ class MainView(Gtk.Stack):
         hint.add_css_class("dim-label")
         hint.add_css_class("caption")
         self.summary_box.append(hint)
+        if self.get_visible_child_name() != "summary":
+            self._target = None  # the summary grows by its own measure
+            self.queue_allocate()
         self.set_visible_child_name("summary")
 
     def _most_likely(self, round_: int) -> str:
